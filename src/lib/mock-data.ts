@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from "@/lib/types";
+import { Task, TaskStatus, User } from "@/lib/types";
 
 export const summaryData = {
   total: 125,
@@ -107,3 +107,12 @@ export const mockTasks: Task[] = [
 export const technicians = ["Alice", "Bob", "Charlie", "David"];
 export const statuses: TaskStatus[] = ["Incomplete", "Completed", "Cancelled"];
 export const taskTypes = ["Installation", "Re-installation", "Inspection", "Removal"];
+
+export const mockUsers: User[] = [
+    { id: 'USR-001', name: 'Admin User', username: 'admin', email: 'admin@taskmaster.pro', role: 'Administrator', status: 'Active' },
+    { id: 'USR-002', name: 'Alice Johnson', username: 'alicej', email: 'alice.j@taskmaster.pro', role: 'Technician', status: 'Active' },
+    { id: 'USR-003', name: 'Bob Williams', username: 'bobw', email: 'bob.w@taskmaster.pro', role: 'Technician', status: 'Active' },
+    { id: 'USR-004', name: 'Charlie Brown', username: 'charlieb', email: 'charlie.b@taskmaster.pro', role: 'Manager', status: 'Pending' },
+    { id: 'USR-005', name: 'David Smith', username: 'davids', email: 'david.s@taskmaster.pro', role: 'Technician', status: 'Active' },
+    { id: 'USR-006', name: 'Eve Davis', username: 'eved', email: 'eve.d@taskmaster.pro', role: 'Technician', status: 'Pending' },
+];

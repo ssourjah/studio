@@ -13,3 +13,14 @@ export type Task = {
   assignedTechnician: string;
   updatedBy: string;
 };
+
+export type UserStatus = 'Active' | 'Pending';
+
+export type User = {
+    id: string;
+    name: string;
+    username: string;
+    email: string;
+    role: 'Administrator' | 'Technician' | 'Manager';
+    status: UserStatus;
+};
