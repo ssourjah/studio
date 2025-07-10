@@ -20,27 +20,27 @@ export const statusPieChartConfig = {
 };
 
 export const dailyProgressChartData = [
-  { date: '2024-07-01', "Completed": 3, "Incomplete": 1 },
-  { date: '2024-07-02', "Completed": 5, "Incomplete": 2 },
-  { date: '2024-07-03', "Completed": 4, "Incomplete": 1 },
-  { date: '2024-07-04', "Completed": 7, "Incomplete": 3 },
-  { date: '2024-07-05', "Completed": 6, "Incomplete": 2 },
-  { date: '2024-07-06', "Completed": 8, "Incomplete": 1 },
-  { date: '2024-07-07', "Completed": 5, "Incomplete": 0 },
+  { date: '2024-07-01', "Completed": 3, "Incomplete": 1, "Cancelled": 0 },
+  { date: '2024-07-02', "Completed": 5, "Incomplete": 2, "Cancelled": 1 },
+  { date: '2024-07-03', "Completed": 4, "Incomplete": 1, "Cancelled": 0 },
+  { date: '2024-07-04', "Completed": 7, "Incomplete": 3, "Cancelled": 2 },
+  { date: '2024-07-05', "Completed": 6, "Incomplete": 2, "Cancelled": 0 },
+  { date: '2024-07-06', "Completed": 8, "Incomplete": 1, "Cancelled": 1 },
+  { date: '2024-07-07', "Completed": 5, "Incomplete": 0, "Cancelled": 0 },
 ];
 
 export const weeklyProgressChartData = [
-  { week: 'Week 27', "Completed": 20, "Incomplete": 8 },
-  { week: 'Week 28', "Completed": 25, "Incomplete": 10 },
-  { week: 'Week 29', "Completed": 30, "Incomplete": 5 },
-  { week: 'Week 30', "Completed": 28, "Incomplete": 7 },
+  { week: 'Week 27', "Completed": 20, "Incomplete": 8, "Cancelled": 2 },
+  { week: 'Week 28', "Completed": 25, "Incomplete": 10, "Cancelled": 3 },
+  { week: 'Week 29', "Completed": 30, "Incomplete": 5, "Cancelled": 1 },
+  { week: 'Week 30', "Completed": 28, "Incomplete": 7, "Cancelled": 4 },
 ];
 
 export const monthlyProgressChartData = [
-  { month: 'April', "Completed": 80, "Incomplete": 20 },
-  { month: 'May', "Completed": 95, "Incomplete": 25 },
-  { month: 'June', "Completed": 110, "Incomplete": 30 },
-  { month: 'July', "Completed": 100, "Incomplete": 15 },
+  { month: 'April', "Completed": 80, "Incomplete": 20, "Cancelled": 5 },
+  { month: 'May', "Completed": 95, "Incomplete": 25, "Cancelled": 8 },
+  { month: 'June', "Completed": 110, "Incomplete": 30, "Cancelled": 10 },
+  { month: 'July', "Completed": 100, "Incomplete": 15, "Cancelled": 7 },
 ];
 
 
