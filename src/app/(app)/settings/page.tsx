@@ -22,13 +22,14 @@ export default function SettingsPage() {
                 <Input id="company-logo" type="file" />
                 <p className="text-sm text-muted-foreground">Upload a new logo for your company.</p>
             </div>
+            <Button>Save Company Info</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Email Server (SMTP)</CardTitle>
-          <CardDescription>Configure your outgoing email server.</CardDescription>
+          <CardDescription>Configure your outgoing email server to send registration invites.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
@@ -45,7 +46,14 @@ export default function SettingsPage() {
                 <Label htmlFor="smtp-user">Username</Label>
                 <Input id="smtp-user" placeholder="user@example.com" />
             </div>
-            <Button variant="outline">Test Connection</Button>
+             <div className="space-y-2">
+                <Label htmlFor="smtp-password">Password</Label>
+                <Input id="smtp-password" type="password" />
+            </div>
+            <div className="flex gap-2">
+                <Button>Save SMTP Settings</Button>
+                <Button variant="outline">Test Connection</Button>
+            </div>
         </CardContent>
       </Card>
       
