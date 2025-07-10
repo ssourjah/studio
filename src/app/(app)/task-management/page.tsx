@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MapPin } from 'lucide-react';
 
 export default function TaskManagementPage() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
@@ -46,6 +47,11 @@ export default function TaskManagementPage() {
       default:
         return 'bg-secondary';
     }
+  };
+  
+  const handleNavigate = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -88,6 +94,7 @@ export default function TaskManagementPage() {
                     <TableHead>Technician</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -102,6 +109,13 @@ export default function TaskManagementPage() {
                         <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeColor(task.status))}>
                             {task.status}
                         </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {task.latitude && task.longitude && (
+                          <Button variant="outline" size="icon" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
+                              <MapPin className="h-4 w-4" />
+                          </Button>
+                       )}
                     </TableCell>
                     </TableRow>
                 ))}

@@ -8,13 +8,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockTasks, technicians, statuses } from '@/lib/mock-data';
-import { Calendar as CalendarIcon, FileSpreadsheet, FileText } from 'lucide-react';
+import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { DateRange } from "react-day-picker"
 
 export default function ReportsPage() {
     const [date, setDate] = useState<DateRange | undefined>()
+    
+    const handleNavigate = (lat: number, lng: number) => {
+        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        window.open(url, '_blank');
+    };
 
   return (
     <Card>
@@ -95,6 +100,7 @@ export default function ReportsPage() {
                     <TableHead>Technician</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -113,6 +119,13 @@ export default function ReportsPage() {
                         >
                             {task.status}
                         </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                       {task.latitude && task.longitude && (
+                          <Button variant="outline" size="icon" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
+                              <MapPin className="h-4 w-4" />
+                          </Button>
+                       )}
                     </TableCell>
                     </TableRow>
                 ))}
