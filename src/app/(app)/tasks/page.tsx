@@ -1,3 +1,4 @@
+'use client';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LocationPicker } from '@/components/tasks/location-picker';
