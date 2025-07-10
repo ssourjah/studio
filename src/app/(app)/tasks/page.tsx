@@ -165,7 +165,7 @@ export default function TasksPage() {
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertTitle>Configuration Missing</AlertTitle>
                                         <AlertDescription>
-                                            Google Maps API key is not configured. Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env.local file to enable the map.
+                                            Google Maps API key is not configured. Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable the map.
                                         </AlertDescription>
                                     </Alert>
                                 )}
