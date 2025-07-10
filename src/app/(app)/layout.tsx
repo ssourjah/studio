@@ -18,6 +18,7 @@ import {
   Users,
   Shield,
   ChevronDown,
+  FileSpreadsheet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const adminMenuItems = [
   { href: '/administrator', label: 'Administrator', icon: Shield },
   { href: '/task-management', label: 'Task Management', icon: ListTodo },
   { href: '/user-management', label: 'User Management', icon: Users },
+  { href: '/reports', label: 'Task Report', icon: FileSpreadsheet },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
