@@ -7,9 +7,8 @@ import { mockTasks, statuses, taskTypes } from '@/lib/mock-data';
 import type { Task, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { User, Calendar, Tag } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function TaskManagementPage() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
@@ -79,36 +78,36 @@ export default function TaskManagementPage() {
         </div>
         
         {filteredTasks.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredTasks.map(task => (
-                    <Card key={task.id} className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-lg">{task.name}</CardTitle>
-                            <CardDescription>{task.jobNumber}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3 flex-grow">
-                            <Separator />
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <User className="h-4 w-4" />
-                                <span>{task.assignedTechnician}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                <span>{format(new Date(task.date), "LLL dd, y")}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Tag className="h-4 w-4" />
-                                <span>{task.type}</span>
-                            </div>
-                        </CardContent>
-                         <div className="p-6 pt-0">
-                            <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeColor(task.status))}>
-                                {task.status}
-                            </Badge>
-                         </div>
-                    </Card>
+           <div className="border rounded-md">
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Job Number</TableHead>
+                    <TableHead>Task Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Technician</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {filteredTasks.map((task) => (
+                    <TableRow key={task.id}>
+                    <TableCell className="font-medium">{task.jobNumber}</TableCell>
+                    <TableCell>{task.name}</TableCell>
+                    <TableCell>{task.type}</TableCell>
+                    <TableCell>{task.assignedTechnician}</TableCell>
+                    <TableCell>{format(new Date(task.date), "LLL dd, y")}</TableCell>
+                    <TableCell>
+                        <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeColor(task.status))}>
+                            {task.status}
+                        </Badge>
+                    </TableCell>
+                    </TableRow>
                 ))}
-            </div>
+                </TableBody>
+            </Table>
+        </div>
         ) : (
             <div className="text-center py-12 text-muted-foreground">
                 <p>No tasks match the current filters.</p>
