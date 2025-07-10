@@ -10,16 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarTrigger,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import {
   LayoutDashboard,
   ListTodo,
   BrainCircuit,
@@ -58,33 +48,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <AppLogo />
-        </SidebarHeader>
-        <SidebarContent>
-            <SidebarMenu>
-                 {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                         <Link href={item.href} className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent w-full">
-                            <item.icon className="h-4 w-4" />
-                            <span className="group-data-[state=expanded]:block hidden">{item.label}</span>
-                         </Link>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
-            <SidebarTrigger className="block md:hidden" />
-            <div className="flex-1">
-                <h1 className="text-lg font-semibold tracking-tight text-card-foreground">
-                    {menuItems.find(item => pathname.startsWith(item.href))?.label ?? 'TaskMaster Pro'}
-                </h1>
-            </div>
-            <div className="flex items-center gap-4">
+    <div className="flex min-h-screen flex-col">
+       <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
+            <AppLogo />
+            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+              {menuItems.map((item) => (
+                <Link key={item.href} href={item.href} className={`text-sm font-medium transition-colors hover:text-primary ${pathname.startsWith(item.href) ? '' : 'text-muted-foreground'}`}>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex flex-1 items-center justify-end gap-4">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                        <Button variant="ghost" className="flex items-center gap-2">
@@ -126,8 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </DropdownMenu>
             </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6">{children}</main>
+    </div>
   );
 }
