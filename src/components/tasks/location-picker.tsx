@@ -4,10 +4,19 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const defaultPosition = { lat: 51.5072, lng: -0.1276 }; // London
+export interface Location {
+  lat: number;
+  lng: number;
+}
 
-export function LocationPicker() {
-  const [position, setPosition] = useState(defaultPosition);
+interface LocationPickerProps {
+    onLocationChange: (location: Location) => void;
+}
+
+const defaultPosition: Location = { lat: 51.5072, lng: -0.1276 }; // London
+
+export function LocationPicker({ onLocationChange }: LocationPickerProps) {
+  const [position, setPosition] = useState<Location>(defaultPosition);
   const [lat, setLat] = useState(defaultPosition.lat.toString());
   const [lng, setLng] = useState(defaultPosition.lng.toString());
 
@@ -15,16 +24,20 @@ export function LocationPicker() {
     const latNum = parseFloat(lat);
     const lngNum = parseFloat(lng);
     if (!isNaN(latNum) && !isNaN(lngNum)) {
-      setPosition({ lat: latNum, lng: lngNum });
+      const newPosition = { lat: latNum, lng: lngNum };
+      setPosition(newPosition);
+      onLocationChange(newPosition);
     }
-  }, [lat, lng]);
+  }, [lat, lng, onLocationChange]);
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (event.detail.latLng) {
         const { lat, lng } = event.detail.latLng;
-        setPosition({ lat, lng });
+        const newPosition = { lat, lng };
+        setPosition(newPosition);
         setLat(lat.toString());
         setLng(lng.toString());
+        onLocationChange(newPosition);
     }
   };
 

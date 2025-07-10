@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SummaryCards } from '@/components/dashboard/summary-cards';
 import { StatusCharts } from '@/components/dashboard/status-charts';
@@ -8,13 +8,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { mockTasks } from '@/lib/mock-data';
 import type { Task, TaskStatus } from '@/lib/types';
-import { MoreHorizontal, Plus, User, Calendar, Tag } from 'lucide-react';
+import { MoreHorizontal, Plus, User, Calendar, Tag, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export default function DashboardPage() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    // In a real app, you would fetch this data.
+    // We are adding it to state to make it interactive.
+    setTasks(mockTasks);
+  }, []);
 
   const handleUpdateStatus = (taskId: string, newStatus: TaskStatus) => {
     setTasks(prevTasks =>
@@ -22,6 +28,11 @@ export default function DashboardPage() {
         task.id === taskId ? { ...task, status: newStatus } : task
       )
     );
+  };
+  
+  const handleNavigate = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    window.open(url, '_blank');
   };
 
   const pendingTasks = tasks.filter(task => task.status === 'Incomplete');
@@ -51,10 +62,13 @@ export default function DashboardPage() {
                         <Card key={task.id} className="flex flex-col">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
-                                    <CardTitle className="text-lg">{task.name}</CardTitle>
+                                    <div className="flex-1">
+                                      <CardTitle className="text-lg">{task.name}</CardTitle>
+                                      <CardDescription>{task.jobNumber}</CardDescription>
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -68,7 +82,6 @@ export default function DashboardPage() {
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-                                <CardDescription>{task.jobNumber}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 flex-grow">
                                 <Separator />
@@ -84,11 +97,23 @@ export default function DashboardPage() {
                                     <Tag className="h-4 w-4" />
                                     <span>{task.type}</span>
                                 </div>
+                                 {task.latitude && task.longitude && (
+                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>{task.location}</span>
+                                     </div>
+                                 )}
                             </CardContent>
-                             <div className="p-6 pt-0">
+                             <div className="p-6 pt-0 flex justify-between items-center">
                                 <Badge variant="secondary" className="bg-orange-500/80 text-secondary-foreground">
                                     {task.status}
                                 </Badge>
+                                 {task.latitude && task.longitude && (
+                                    <Button variant="outline" size="sm" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
+                                        <MapPin className="mr-2 h-4 w-4" />
+                                        Navigate
+                                    </Button>
+                                 )}
                              </div>
                         </Card>
                     ))}

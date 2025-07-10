@@ -1,7 +1,7 @@
 'use client';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LocationPicker } from '@/components/tasks/location-picker';
+import { LocationPicker, type Location } from '@/components/tasks/location-picker';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,9 +13,11 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const [location, setLocation] = useState<Location | null>(null);
 
     return (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -49,7 +51,7 @@ export default function TasksPage() {
                             <Label>Location</Label>
                             {apiKey ? (
                                 <APIProvider apiKey={apiKey}>
-                                    <LocationPicker />
+                                    <LocationPicker onLocationChange={setLocation} />
                                 </APIProvider>
                             ) : (
                                 <Alert variant="destructive">

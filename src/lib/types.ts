@@ -7,6 +7,8 @@ export type Task = {
   type: string;
   description: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   contactInfo: string;
   date: string;
   status: TaskStatus;
