@@ -1,9 +1,11 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { Pie, PieChart, Bar, BarChart, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
+import { Pie, PieChart, Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import {
-  progressChartData,
+  dailyProgressChartData,
+  weeklyProgressChartData,
+  monthlyProgressChartData,
   statusPieChartData,
   statusPieChartConfig,
   tasksBarChartData,
@@ -33,51 +35,78 @@ export function StatusCharts() {
         </Card>
 
         <Card className="lg:col-span-2">
-            <CardHeader>
-            <CardTitle>Task Progress</CardTitle>
-            <CardDescription>Daily completed and incomplete tasks over the last week.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer
-                    config={{
-                        Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
-                        Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
-                    }}
-                    className="h-[250px] w-full"
-                >
-                    <AreaChart
-                        data={progressChartData}
-                        margin={{ left: -20, right: 12, top: 4, bottom: 0 }}
-                    >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                        />
-                        <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                        <Area
-                            dataKey="Completed"
-                            type="natural"
-                            fill="var(--color-Completed)"
-                            fillOpacity={0.4}
-                            stroke="var(--color-Completed)"
-                            stackId="a"
-                        />
-                        <Area
-                            dataKey="Incomplete"
-                            type="natural"
-                            fill="var(--color-Incomplete)"
-                            fillOpacity={0.4}
-                            stroke="var(--color-Incomplete)"
-                            stackId="a"
-                        />
-                    </AreaChart>
-                </ChartContainer>
-            </CardContent>
+            <Tabs defaultValue="daily">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                        <CardTitle>Task Progress</CardTitle>
+                        <CardDescription>Completed vs. Incomplete tasks.</CardDescription>
+                    </div>
+                    <TabsList className="grid w-full max-w-[200px] grid-cols-3">
+                        <TabsTrigger value="daily">Daily</TabsTrigger>
+                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    </TabsList>
+                </CardHeader>
+                <CardContent>
+                    <TabsContent value="daily">
+                        <ChartContainer
+                            config={{
+                                Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
+                                Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+                            }}
+                            className="h-[250px] w-full"
+                        >
+                            <BarChart data={dailyProgressChartData} margin={{ left: -20, right: 12, top: 4, bottom: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} />
+                                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <ChartLegend />
+                                <Bar dataKey="Completed" fill="var(--color-Completed)" radius={4} />
+                                <Bar dataKey="Incomplete" fill="var(--color-Incomplete)" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
+                    </TabsContent>
+                    <TabsContent value="weekly">
+                        <ChartContainer
+                            config={{
+                                Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
+                                Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+                            }}
+                            className="h-[250px] w-full"
+                        >
+                            <BarChart data={weeklyProgressChartData} margin={{ left: -20, right: 12, top: 4, bottom: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <ChartLegend />
+                                <Bar dataKey="Completed" fill="var(--color-Completed)" radius={4} />
+                                <Bar dataKey="Incomplete" fill="var(--color-Incomplete)" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
+                    </TabsContent>
+                    <TabsContent value="monthly">
+                         <ChartContainer
+                            config={{
+                                Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
+                                Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+                            }}
+                            className="h-[250px] w-full"
+                        >
+                            <BarChart data={monthlyProgressChartData} margin={{ left: -20, right: 12, top: 4, bottom: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <ChartLegend />
+                                <Bar dataKey="Completed" fill="var(--color-Completed)" radius={4} />
+                                <Bar dataKey="Incomplete" fill="var(--color-Incomplete)" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
+                    </TabsContent>
+                </CardContent>
+            </Tabs>
         </Card>
 
         <Card className="lg:col-span-3">

@@ -19,7 +19,7 @@ export const statusPieChartConfig = {
   cancelled: { label: 'Cancelled', color: 'hsl(var(--destructive))' },
 };
 
-export const progressChartData = [
+export const dailyProgressChartData = [
   { date: '2024-07-01', "Completed": 3, "Incomplete": 1 },
   { date: '2024-07-02', "Completed": 5, "Incomplete": 2 },
   { date: '2024-07-03', "Completed": 4, "Incomplete": 1 },
@@ -28,6 +28,21 @@ export const progressChartData = [
   { date: '2024-07-06', "Completed": 8, "Incomplete": 1 },
   { date: '2024-07-07', "Completed": 5, "Incomplete": 0 },
 ];
+
+export const weeklyProgressChartData = [
+  { week: 'Week 27', "Completed": 20, "Incomplete": 8 },
+  { week: 'Week 28', "Completed": 25, "Incomplete": 10 },
+  { week: 'Week 29', "Completed": 30, "Incomplete": 5 },
+  { week: 'Week 30', "Completed": 28, "Incomplete": 7 },
+];
+
+export const monthlyProgressChartData = [
+  { month: 'April', "Completed": 80, "Incomplete": 20 },
+  { month: 'May', "Completed": 95, "Incomplete": 25 },
+  { month: 'June', "Completed": 110, "Incomplete": 30 },
+  { month: 'July', "Completed": 100, "Incomplete": 15 },
+];
+
 
 export const tasksBarChartData = [
     { name: 'Installations', "Completed": 30, "Incomplete": 10, "Cancelled": 2 },
