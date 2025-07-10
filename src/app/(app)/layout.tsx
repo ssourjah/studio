@@ -16,8 +16,6 @@ import {
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
@@ -32,9 +30,11 @@ import {
   LifeBuoy,
   Users,
   Shield,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -44,10 +44,14 @@ const menuItems = [
 ];
 
 const userMenuItems = [
+    { href: '/profile', label: 'Profile', icon: UserIcon },
+    { href: '/settings', label: 'Settings', icon: Settings },
+]
+
+const adminMenuItems = [
     { href: '/administrator', label: 'Administrator', icon: Shield },
     { href: '/task-management', label: 'Task Management', icon: ListTodo },
     { href: '/user-management', label: 'User Management', icon: Users },
-    { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -61,66 +65,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
             <SidebarMenu>
-                <SidebarMenuItem>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                           <div className="group/menu-item relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 cursor-pointer">
-                              <Avatar className="h-8 w-8">
-                                  <AvatarImage src="https://placehold.co/40x40.png" alt="@admin" data-ai-hint="profile picture" />
-                                  <AvatarFallback>AD</AvatarFallback>
-                              </Avatar>
-                              <div className="hidden group-data-[state=expanded]:block">
-                                  <p className="font-medium text-sidebar-foreground">Admin Menu</p>
-                              </div>
-                          </div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start" className="w-56">
-                          <DropdownMenuLabel>Management</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                           {userMenuItems.map((item) => (
-                                <DropdownMenuItem key={item.href} asChild>
-                                    <Link href={item.href}><item.icon className="mr-2 h-4 w-4" />{item.label}</Link>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                </SidebarMenuItem>
+                 {menuItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                         <Link href={item.href} className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent w-full">
+                            <item.icon className="h-4 w-4" />
+                            <span className="group-data-[state=expanded]:block hidden">{item.label}</span>
+                         </Link>
+                    </SidebarMenuItem>
+                ))}
             </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-               <div className="group/menu-item relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 cursor-pointer">
-                  <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://placehold.co/40x40.png" alt="@admin" data-ai-hint="profile picture" />
-                      <AvatarFallback>AD</AvatarFallback>
-                  </Avatar>
-                  <div className="hidden group-data-[state=expanded]:block">
-                      <p className="font-medium text-sidebar-foreground">Admin User</p>
-                      <p className="text-xs text-sidebar-foreground/70">admin@taskmaster.pro</p>
-                  </div>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="start" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link>
-              </DropdownMenuItem>
-               <DropdownMenuItem>
-                <LifeBuoy className="mr-2 h-4 w-4" />
-                Support
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/login"><LogOut className="mr-2 h-4 w-4" />Log out</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
@@ -129,6 +83,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <h1 className="text-lg font-semibold tracking-tight text-card-foreground">
                     {menuItems.find(item => pathname.startsWith(item.href))?.label ?? 'TaskMaster Pro'}
                 </h1>
+            </div>
+            <div className="flex items-center gap-4">
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <Button variant="ghost" className="flex items-center gap-2">
+                           <Avatar className="h-8 w-8">
+                              <AvatarImage src="https://placehold.co/40x40.png" alt="@admin" data-ai-hint="profile picture" />
+                              <AvatarFallback>AD</AvatarFallback>
+                          </Avatar>
+                          <div className="text-left hidden md:block">
+                            <p className="font-medium text-sm text-card-foreground">Admin User</p>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                       </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="bottom" align="end" className="w-56">
+                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                        {userMenuItems.map((item) => (
+                            <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href}><item.icon className="mr-2 h-4 w-4" />{item.label}</Link>
+                            </DropdownMenuItem>
+                        ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Management</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                       {adminMenuItems.map((item) => (
+                            <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href}><item.icon className="mr-2 h-4 w-4" />{item.label}</Link>
+                            </DropdownMenuItem>
+                        ))}
+                      <DropdownMenuSeparator />
+                       <DropdownMenuItem>
+                        <LifeBuoy className="mr-2 h-4 w-4" />
+                        Support
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/login"><LogOut className="mr-2 h-4 w-4" />Log out</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
             </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
