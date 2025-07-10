@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    urlImports: ['https://cdn.skypack.dev'],
+  },
 };
 
 export default nextConfig;

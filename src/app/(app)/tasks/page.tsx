@@ -23,12 +23,12 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Task, User } from '@/lib/types';
-import { taskTypes, statuses } from '@/lib/mock-data';
+import { taskTypes } from '@/lib/mock-data';
 
 const taskSchema = z.object({
     name: z.string().min(1, "Task name is required"),
     type: z.string().min(1, "Task type is required"),
-    description: z.string().max(1500, "Description is too long").optional(),
+    description: z.string().max(256, "Description must be 256 characters or less").optional(),
     location: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -151,7 +151,8 @@ export default function TasksPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="task-desc">Task Description</Label>
-                                <Textarea id="task-desc" placeholder="Describe the task in detail (max 1500 characters)" maxLength={1500} {...register('description')} />
+                                <Textarea id="task-desc" placeholder="Describe the task in detail (max 256 words)" maxLength={256} {...register('description')} />
+                                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label>Location</Label>
@@ -164,7 +165,7 @@ export default function TasksPage() {
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertTitle>Configuration Missing</AlertTitle>
                                         <AlertDescription>
-                                            Google Maps API key is not configured. Please add it to your .env.local file to enable the map.
+                                            Google Maps API key is not configured. Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env.local file to enable the map.
                                         </AlertDescription>
                                     </Alert>
                                 )}
@@ -173,12 +174,12 @@ export default function TasksPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="contact-person">Contact Person</Label>
                                     <Input id="contact-person" placeholder="e.g., John Doe" {...register('contactPerson')} />
-                                     {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson.message}</p>}
+                                     {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson.message as string}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="contact-phone">Contact Phone</Label>
                                     <Input id="contact-phone" placeholder="e.g., 123-456-7890" {...register('contactPhone')} />
-                                    {errors.contactPhone && <p className="text-sm text-red-500">{errors.contactPhone.message}</p>}
+                                    {errors.contactPhone && <p className="text-sm text-red-500">{errors.contactPhone.message as string}</p>}
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -229,7 +230,7 @@ export default function TasksPage() {
                                         </Select>
                                     )}
                                 />
-                                {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message}</p>}
+                                {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message as string}</p>}
                             </div>
                             <Button type="submit" className="w-full">Create Task</Button>
                         </form>
