@@ -20,7 +20,7 @@ export function AppLogo({ showName = true }: AppLogoProps) {
           <BarChart3 className="h-5 w-5 text-primary-foreground" />
         )}
       </div>
-      {showName && <span className="font-headline">{companyName}</span>}
+      {showName && <span className="font-headline">TaskMaster Pro</span>}
     </Link>
   );
 }
