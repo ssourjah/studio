@@ -4,21 +4,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/context/SettingsContext";
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState, useEffect } from "react";
 
 export default function SettingsPage() {
   const { companyName, setCompanyName, logoUrl, setLogoUrl } = useSettings();
+
+  const [localCompanyName, setLocalCompanyName] = useState(companyName);
+  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(logoUrl);
+
+  useEffect(() => {
+    setLocalCompanyName(companyName);
+  }, [companyName]);
+
+  useEffect(() => {
+    setPreviewLogoUrl(logoUrl);
+  }, [logoUrl]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoUrl(reader.result as string);
+        setPreviewLogoUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   }
+
+  const handleSaveChanges = () => {
+    setCompanyName(localCompanyName);
+    setLogoUrl(previewLogoUrl);
+  };
 
   return (
     <div className="space-y-6">
@@ -30,20 +46,20 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                <Input id="company-name" value={localCompanyName} onChange={(e) => setLocalCompanyName(e.target.value)} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="company-logo">Company Logo</Label>
                 <Input id="company-logo" type="file" onChange={handleLogoUpload} accept="image/*" />
                 <p className="text-sm text-muted-foreground">Upload a new logo for your company.</p>
-                {logoUrl && (
+                {previewLogoUrl && (
                   <div className="mt-4">
                     <p className="text-sm font-medium">Logo Preview:</p>
-                    <img src={logoUrl} alt="Company Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2" />
+                    <img src={previewLogoUrl} alt="Company Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2" />
                   </div>
                 )}
             </div>
-            <Button>Save Company Info</Button>
+            <Button onClick={handleSaveChanges}>Save Company Info</Button>
         </CardContent>
       </Card>
 
