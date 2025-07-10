@@ -5,16 +5,18 @@ import { SummaryCards } from '@/components/dashboard/summary-cards';
 import { StatusCharts } from '@/components/dashboard/status-charts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { mockTasks } from '@/lib/mock-data';
 import type { Task, TaskStatus } from '@/lib/types';
-import { MoreHorizontal, Plus, User, Calendar, Tag, MapPin } from 'lucide-react';
+import { User, Calendar, Tag, MapPin, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     // In a real app, you would fetch this data.
@@ -28,11 +30,12 @@ export default function DashboardPage() {
         task.id === taskId ? { ...task, status: newStatus } : task
       )
     );
+    setIsDialogOpen(false); // Close dialog after action
   };
   
-  const handleNavigate = (lat: number, lng: number) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    window.open(url, '_blank');
+  const handleCardClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsDialogOpen(true);
   };
 
   const pendingTasks = tasks.filter(task => task.status === 'Incomplete');
@@ -59,28 +62,11 @@ export default function DashboardPage() {
             {pendingTasks.length > 0 ? (
                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {pendingTasks.map(task => (
-                        <Card key={task.id} className="flex flex-col">
+                        <Card key={task.id} className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleCardClick(task)}>
                             <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <CardTitle className="text-lg">{task.name}</CardTitle>
-                                      <CardDescription>{task.jobNumber}</CardDescription>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleUpdateStatus(task.id, 'Completed')}>
-                                                Mark as Completed
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleUpdateStatus(task.id, 'Cancelled')}>
-                                                Mark as Cancelled
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                <div className="flex-1">
+                                    <CardTitle className="text-lg">{task.name}</CardTitle>
+                                    <CardDescription>{task.jobNumber}</CardDescription>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-3 flex-grow">
@@ -104,16 +90,10 @@ export default function DashboardPage() {
                                      </div>
                                  )}
                             </CardContent>
-                             <div className="p-6 pt-0 flex justify-between items-center">
+                             <div className="p-6 pt-0">
                                 <Badge variant="secondary" className="bg-orange-500/80 text-secondary-foreground">
                                     {task.status}
                                 </Badge>
-                                 {task.latitude && task.longitude && (
-                                    <Button variant="outline" size="sm" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
-                                        <MapPin className="mr-2 h-4 w-4" />
-                                        Navigate
-                                    </Button>
-                                 )}
                              </div>
                         </Card>
                     ))}
@@ -125,6 +105,13 @@ export default function DashboardPage() {
             )}
         </CardContent>
       </Card>
+      
+      <TaskDetailsDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        task={selectedTask}
+        onUpdateStatus={handleUpdateStatus}
+      />
     </div>
   );
 }
