@@ -11,8 +11,12 @@ import { mockTasks, taskTypes, technicians } from '@/lib/mock-data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function TasksPage() {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
     return (
         <div className="grid gap-6 lg:grid-cols-5">
             <div className="lg:col-span-2">
@@ -43,9 +47,19 @@ export default function TasksPage() {
                         </div>
                         <div className="space-y-2">
                             <Label>Location</Label>
-                            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
-                                <LocationPicker />
-                            </APIProvider>
+                            {apiKey ? (
+                                <APIProvider apiKey={apiKey}>
+                                    <LocationPicker />
+                                </APIProvider>
+                            ) : (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Configuration Missing</AlertTitle>
+                                    <AlertDescription>
+                                        Google Maps API key is not configured. Please add it to your .env.local file to enable the map.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="technician">Assign Technician</Label>
