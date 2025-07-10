@@ -37,7 +37,7 @@ const adminMenuItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { companyName } = useSettings();
+  const { companyName, avatarUrl } = useSettings();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src="https://placehold.co/40x40.png"
+                    src={avatarUrl || "https://placehold.co/40x40.png"}
                     alt="@admin"
                     data-ai-hint="profile picture"
                   />

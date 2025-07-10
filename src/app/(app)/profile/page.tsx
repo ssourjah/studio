@@ -1,22 +1,52 @@
+'use client';
+import { useRef, ChangeEvent } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useSettings } from '@/context/SettingsContext';
 
 export default function ProfilePage() {
+  const { avatarUrl, setAvatarUrl } = useSettings();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-1">
              <Card>
                  <CardContent className="pt-6 flex flex-col items-center text-center">
-                    <Avatar className="h-24 w-24 mb-4">
-                        <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture" />
+                    <Avatar className="h-24 w-24 mb-4 cursor-pointer" onClick={handleAvatarClick}>
+                        <AvatarImage src={avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
                         <AvatarFallback>AD</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">Admin User</h2>
                     <p className="text-muted-foreground">System Administrator</p>
-                    <Button variant="outline" className="mt-4">Upload Picture</Button>
+                    <Button variant="outline" className="mt-4" onClick={handleAvatarClick}>
+                        Upload Picture
+                    </Button>
+                    <Input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange}
+                      className="hidden" 
+                      accept="image/*"
+                    />
                  </CardContent>
              </Card>
         </div>
