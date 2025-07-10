@@ -15,7 +15,7 @@ export default function ProfilePage() {
                         <AvatarFallback>AD</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">Admin User</h2>
-                    <p className="text-muted-foreground">Administrator</p>
+                    <p className="text-muted-foreground">System Administrator</p>
                     <Button variant="outline" className="mt-4">Upload Picture</Button>
                  </CardContent>
              </Card>
@@ -37,23 +37,35 @@ export default function ProfilePage() {
                             <Input id="username" defaultValue="admin" />
                         </div>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" defaultValue="admin@taskmaster.pro" disabled />
+                     <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" defaultValue="admin@taskmaster.pro" disabled />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input id="phone" defaultValue="123-456-7890" />
+                        </div>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="employee-id">Employee ID</Label>
-                            <Input id="employee-id" defaultValue="EMP001" />
+                            <Input id="employee-id" defaultValue="EMP001" disabled />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="designation">Designation</Label>
-                            <Input id="designation" defaultValue="Administrator" />
+                            <Input id="designation" defaultValue="System Administrator" />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="department">Department</Label>
-                        <Input id="department" defaultValue="IT Operations" />
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="department">Department</Label>
+                            <Input id="department" defaultValue="IT" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="access-level">Access Level</Label>
+                            <Input id="access-level" defaultValue="Admin" disabled />
+                        </div>
                     </div>
                     <Button>Save Changes</Button>
                 </CardContent>

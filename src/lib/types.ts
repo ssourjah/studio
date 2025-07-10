@@ -15,12 +15,18 @@ export type Task = {
 };
 
 export type UserStatus = 'Active' | 'Pending';
+export type AccessLevel = 'Admin' | 'Support' | 'Technician' | 'Manager';
+
 
 export type User = {
     id: string;
     name: string;
     username: string;
     email: string;
-    role: 'Administrator' | 'Technician' | 'Manager';
+    phone: string;
+    employeeId: string;
+    department: string;
+    designation: string;
+    accessLevel: AccessLevel;
     status: UserStatus;
 };

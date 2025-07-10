@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, UserPlus, Mail } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { accessLevels } from "@/lib/mock-data";
 
 export default function InviteUserPage() {
   return (
@@ -14,7 +15,7 @@ export default function InviteUserPage() {
         <div>
             <Button variant="outline" asChild>
                 <Link href="/user-management">
-                    <ArrowLeft />
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to User Management
                 </Link>
             </Button>
@@ -37,29 +38,49 @@ export default function InviteUserPage() {
                         <Input id="username" placeholder="johndoe" />
                     </div>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="email-register">Email</Label>
-                    <Input id="email-register" type="email" placeholder="user@company.com" />
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="email-register">Email</Label>
+                        <Input id="email-register" type="email" placeholder="user@company.com" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input id="phone" placeholder="123-456-7890" />
+                    </div>
+                </div>
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="employee-id">Employee ID</Label>
+                        <Input id="employee-id" placeholder="EMP123" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="department">Department</Label>
+                        <Input id="department" placeholder="e.g., Field Services" />
+                    </div>
+                </div>
+                 <div className="grid md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="designation">Designation</Label>
+                        <Input id="designation" placeholder="e.g., Technician" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="access-level-register">Access Level</Label>
+                        <Select>
+                            <SelectTrigger id="access-level-register">
+                                <SelectValue placeholder="Select an access level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {accessLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <Input id="password" type="password" />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="role-register">Role</Label>
-                    <Select>
-                        <SelectTrigger id="role-register">
-                            <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="administrator">Administrator</SelectItem>
-                            <SelectItem value="technician">Technician</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
                 <Button>
-                    <UserPlus />
+                    <UserPlus className="mr-2 h-4 w-4" />
                     Create User Account
                 </Button>
             </CardContent>
@@ -91,20 +112,18 @@ export default function InviteUserPage() {
                     </div>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="role-invite">Role</Label>
+                    <Label htmlFor="access-level-invite">Access Level</Label>
                     <Select>
-                        <SelectTrigger id="role-invite">
-                            <SelectValue placeholder="Select a role" />
+                        <SelectTrigger id="access-level-invite">
+                            <SelectValue placeholder="Select an access level" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="administrator">Administrator</SelectItem>
-                            <SelectItem value="technician">Technician</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
+                             {accessLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                 <Button>
-                    <Mail />
+                    <Mail className="mr-2 h-4 w-4" />
                     Send Invitation
                 </Button>
             </CardContent>

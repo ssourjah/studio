@@ -14,7 +14,7 @@ export default function RegisterPage() {
         </div>
         <h1 className="text-3xl font-bold font-headline">TaskMaster Pro</h1>
       </div>
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Register New User</CardTitle>
           <CardDescription>
@@ -32,9 +32,15 @@ export default function RegisterPage() {
                     <Input id="username" placeholder="your_username" required />
                 </div>
             </div>
-            <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required />
+             <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" placeholder="m@example.com" required />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input id="phone" placeholder="123-456-7890" />
+                </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -42,13 +48,19 @@ export default function RegisterPage() {
                     <Input id="employee-id" placeholder="EMP12345" />
                 </div>
                 <div className="grid gap-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Input id="department" placeholder="e.g. Field Services" />
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                 <div className="grid gap-2">
                     <Label htmlFor="designation">Designation</Label>
                     <Input id="designation" placeholder="Technician" />
                 </div>
-            </div>
-             <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" />
+                <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" type="password" />
+                </div>
             </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

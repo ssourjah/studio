@@ -64,9 +64,9 @@ export default function UserManagementPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Full Name</TableHead>
-                        <TableHead>Username</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
+                        <TableHead>Designation</TableHead>
+                        <TableHead>Access Level</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -75,9 +75,9 @@ export default function UserManagementPage() {
                     {users.map(user => (
                         <TableRow key={user.id}>
                             <TableCell className="font-medium">{user.name}</TableCell>
-                            <TableCell>{user.username}</TableCell>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.role}</TableCell>
+                            <TableCell>{user.designation}</TableCell>
+                            <TableCell>{user.accessLevel}</TableCell>
                             <TableCell>
                                 <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeVariant(user.status))}>
                                     {user.status}
