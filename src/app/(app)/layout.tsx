@@ -12,7 +12,6 @@ import {
 import {
   LayoutDashboard,
   ListTodo,
-  BrainCircuit,
   FileText,
   Settings,
   User as UserIcon,
@@ -29,7 +28,6 @@ import { Button } from '@/components/ui/button';
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
-  { href: '/ai-predictor', label: 'AI Duration Predictor', icon: BrainCircuit },
   { href: '/reports', label: 'Reports', icon: FileText },
 ];
 
