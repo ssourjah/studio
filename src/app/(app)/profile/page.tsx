@@ -1,5 +1,5 @@
 'use client';
-import { useRef, ChangeEvent } from 'react';
+import { useRef, ChangeEvent, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { useSettings } from '@/context/SettingsContext';
 export default function ProfilePage() {
   const { avatarUrl, setAvatarUrl } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -20,9 +21,16 @@ export default function ProfilePage() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
+        setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSavePicture = () => {
+    if (previewUrl) {
+      setAvatarUrl(previewUrl);
+      setPreviewUrl(null);
     }
   };
 
@@ -32,14 +40,19 @@ export default function ProfilePage() {
              <Card>
                  <CardContent className="pt-6 flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24 mb-4 cursor-pointer" onClick={handleAvatarClick}>
-                        <AvatarImage src={avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
+                        <AvatarImage src={previewUrl || avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
                         <AvatarFallback>AD</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">Admin User</h2>
                     <p className="text-muted-foreground">System Administrator</p>
-                    <Button variant="outline" className="mt-4" onClick={handleAvatarClick}>
-                        Upload Picture
-                    </Button>
+                    <div className="flex flex-col gap-2 mt-4 w-full px-6">
+                        <Button variant="outline" onClick={handleAvatarClick}>
+                            Change Picture
+                        </Button>
+                         {previewUrl && (
+                            <Button onClick={handleSavePicture}>Save Picture</Button>
+                        )}
+                    </div>
                     <Input 
                       type="file" 
                       ref={fileInputRef} 
