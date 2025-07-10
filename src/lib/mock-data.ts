@@ -1,4 +1,4 @@
-import { Task, TaskStatus, User, AccessLevel } from "@/lib/types";
+import { Task, TaskStatus, User, AccessLevel, Designation } from "@/lib/types";
 
 export const summaryData = {
   total: 125,
@@ -117,4 +117,11 @@ export const mockUsers: User[] = [
     { id: 'USR-004', name: 'Charlie Brown', username: 'charlieb', email: 'charlie.b@taskmaster.pro', phone: '123-456-7893', employeeId: 'EMP004', department: 'Management', designation: 'Operations Manager', accessLevel: 'Manager', status: 'Pending' },
     { id: 'USR-005', name: 'David Smith', username: 'davids', email: 'david.s@taskmaster.pro', phone: '123-456-7894', employeeId: 'EMP005', department: 'Support', designation: 'Support Specialist', accessLevel: 'Support', status: 'Active' },
     { id: 'USR-006', name: 'Eve Davis', username: 'eved', email: 'eve.d@taskmaster.pro', phone: '123-456-7895', employeeId: 'EMP006', department: 'Support', designation: 'Support Specialist', accessLevel: 'Support', status: 'Pending' },
+];
+
+export const mockDesignations: Designation[] = [
+    { id: 'DES-001', name: 'System Administrator', accessLevel: 'Admin' },
+    { id: 'DES-002', name: 'Field Technician', accessLevel: 'Technician' },
+    { id: 'DES-003', name: 'Operations Manager', accessLevel: 'Manager' },
+    { id: 'DES-004', name: 'Support Specialist', accessLevel: 'Support' },
 ];

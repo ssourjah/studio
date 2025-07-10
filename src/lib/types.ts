@@ -30,3 +30,9 @@ export type User = {
     accessLevel: AccessLevel;
     status: UserStatus;
 };
+
+export type Designation = {
+  id: string;
+  name: string;
+  accessLevel: AccessLevel;
+};
