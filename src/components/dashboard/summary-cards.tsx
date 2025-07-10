@@ -1,35 +1,43 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { summaryData } from '@/lib/mock-data';
 import { Package, CheckCircle2, Loader, XCircle } from 'lucide-react';
 
-const cardDetails = [
-  {
-    title: 'Total Tasks',
-    value: summaryData.total,
-    icon: Package,
-    color: 'text-blue-500',
-  },
-  {
-    title: 'Completed',
-    value: summaryData.completed,
-    icon: CheckCircle2,
-    color: 'text-green-500',
-  },
-  {
-    title: 'Incomplete',
-    value: summaryData.incomplete,
-    icon: Loader,
-    color: 'text-orange-500',
-  },
-  {
-    title: 'Cancelled',
-    value: summaryData.cancelled,
-    icon: XCircle,
-    color: 'text-red-500',
-  },
-];
+interface SummaryCardsProps {
+    summaryData: {
+        total: number;
+        completed: number;
+        incomplete: number;
+        cancelled: number;
+    }
+}
 
-export function SummaryCards() {
+export function SummaryCards({ summaryData }: SummaryCardsProps) {
+  const cardDetails = [
+    {
+      title: 'Total Tasks',
+      value: summaryData.total,
+      icon: Package,
+      color: 'text-blue-500',
+    },
+    {
+      title: 'Completed',
+      value: summaryData.completed,
+      icon: CheckCircle2,
+      color: 'text-green-500',
+    },
+    {
+      title: 'Incomplete',
+      value: summaryData.incomplete,
+      icon: Loader,
+      color: 'text-orange-500',
+    },
+    {
+      title: 'Cancelled',
+      value: summaryData.cancelled,
+      icon: XCircle,
+      color: 'text-red-500',
+    },
+  ];
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {cardDetails.map((card) => (

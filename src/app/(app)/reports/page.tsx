@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -7,15 +7,41 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockTasks, technicians, statuses } from '@/lib/mock-data';
+import { technicians, statuses } from '@/lib/mock-data';
 import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import type { DateRange } from "react-day-picker"
+import type { DateRange } from "react-day-picker";
+import type { Task, User } from '@/lib/types';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+
 
 export default function ReportsPage() {
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [allTechnicians, setAllTechnicians] = useState<User[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
     
+    useEffect(() => {
+        const q = query(collection(db, "tasks"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+            setTasks(tasksData);
+        });
+
+        const techQuery = query(collection(db, "users"), where("accessLevel", "==", "Technician"));
+        const techUnsubscribe = onSnapshot(techQuery, (snapshot) => {
+            const techData: User[] = [];
+            snapshot.forEach(doc => techData.push({ id: doc.id, ...doc.data() } as User));
+            setAllTechnicians(techData);
+        });
+
+        return () => {
+            unsubscribe();
+            techUnsubscribe();
+        };
+    }, []);
+
     const handleNavigate = (lat: number, lng: number) => {
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
         window.open(url, '_blank');
@@ -86,7 +112,7 @@ export default function ReportsPage() {
                     <SelectValue placeholder="Filter by technician" />
                 </SelectTrigger>
                 <SelectContent>
-                    {technicians.map(tech => <SelectItem key={tech} value={tech}>{tech}</SelectItem>)}
+                    {allTechnicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
                 </SelectContent>
             </Select>
              <Button>Apply Filters</Button>
@@ -104,7 +130,7 @@ export default function ReportsPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {mockTasks.map((task) => (
+                {tasks.map((task) => (
                     <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.jobNumber}</TableCell>
                     <TableCell>{task.name}</TableCell>

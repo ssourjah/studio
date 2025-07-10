@@ -2,21 +2,99 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Pie, PieChart, Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import {
-  dailyProgressChartData,
-  weeklyProgressChartData,
-  monthlyProgressChartData,
-  statusPieChartData,
-  statusPieChartConfig,
-} from '@/lib/mock-data';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Task } from '@/lib/types';
+import { useMemo } from 'react';
+import { subDays, startOfWeek, endOfWeek, eachWeekOfInterval, format, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 
-export function StatusCharts() {
+interface StatusChartsProps {
+  tasks: Task[];
+}
+
+export function StatusCharts({ tasks }: StatusChartsProps) {
   const chartConfig = {
       Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
       Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
       Cancelled: { label: 'Cancelled', color: 'hsl(var(--destructive))' },
   };
+
+  const statusPieChartConfig = {
+    completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
+    incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+    cancelled: { label: 'Cancelled', color: 'hsl(var(--destructive))' },
+  };
+
+  const {
+    statusPieChartData,
+    dailyProgressChartData,
+    weeklyProgressChartData,
+    monthlyProgressChartData
+  } = useMemo(() => {
+    const statusCounts = tasks.reduce((acc, task) => {
+      acc[task.status] = (acc[task.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const pieData = [
+      { name: 'Completed', value: statusCounts['Completed'] || 0, fill: 'var(--color-completed)' },
+      { name: 'Incomplete', value: statusCounts['Incomplete'] || 0, fill: 'var(--color-incomplete)' },
+      { name: 'Cancelled', value: statusCounts['Cancelled'] || 0, fill: 'var(--color-cancelled)' },
+    ];
+    
+    // Daily
+    const dailyData: { [key: string]: any } = {};
+    const last7Days = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), i), 'yyyy-MM-dd')).reverse();
+    last7Days.forEach(day => {
+        dailyData[day] = { date: day, Completed: 0, Incomplete: 0, Cancelled: 0 };
+    });
+    tasks.forEach(task => {
+        const taskDay = format(new Date(task.date), 'yyyy-MM-dd');
+        if (dailyData[taskDay]) {
+            dailyData[taskDay][task.status]++;
+        }
+    });
+
+    // Weekly
+    const weeklyData: { [key: string]: any } = {};
+    if (tasks.length > 0) {
+        const firstTaskDate = tasks.reduce((min, t) => new Date(t.date) < min ? new Date(t.date) : min, new Date());
+        const weeks = eachWeekOfInterval({ start: firstTaskDate, end: new Date() }, { weekStartsOn: 1 });
+        weeks.forEach(week => {
+            const weekLabel = `Week ${format(week, 'w')}`;
+            weeklyData[weekLabel] = { week: weekLabel, Completed: 0, Incomplete: 0, Cancelled: 0 };
+        });
+        tasks.forEach(task => {
+            const taskWeek = `Week ${format(new Date(task.date), 'w')}`;
+            if(weeklyData[taskWeek]) {
+                weeklyData[taskWeek][task.status]++;
+            }
+        });
+    }
+
+    // Monthly
+    const monthlyData: { [key: string]: any } = {};
+    if (tasks.length > 0) {
+        const firstTaskDate = tasks.reduce((min, t) => new Date(t.date) < min ? new Date(t.date) : min, new Date());
+        const months = eachMonthOfInterval({ start: firstTaskDate, end: new Date() });
+        months.forEach(month => {
+            const monthLabel = format(month, 'MMM');
+            monthlyData[monthLabel] = { month: monthLabel, Completed: 0, Incomplete: 0, Cancelled: 0 };
+        });
+        tasks.forEach(task => {
+            const taskMonth = format(new Date(task.date), 'MMM');
+            if(monthlyData[taskMonth]) {
+                monthlyData[taskMonth][task.status]++;
+            }
+        });
+    }
+
+    return {
+      statusPieChartData: pieData,
+      dailyProgressChartData: Object.values(dailyData),
+      weeklyProgressChartData: Object.values(weeklyData),
+      monthlyProgressChartData: Object.values(monthlyData)
+    };
+  }, [tasks]);
 
   return (
     <div className="grid gap-6 md:grid-cols-2">

@@ -7,21 +7,114 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { mockTasks, taskTypes, technicians } from '@/lib/mock-data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, onSnapshot, query } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import type { Task, User } from '@/lib/types';
+import { taskTypes, statuses } from '@/lib/mock-data';
+
+const taskSchema = z.object({
+    name: z.string().min(1, "Task name is required"),
+    type: z.string().min(1, "Task type is required"),
+    description: z.string().max(1500, "Description is too long").optional(),
+    location: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    contactPerson: z.string().min(1, "Contact person is required"),
+    contactPhone: z.string().min(1, "Contact phone is required"),
+    date: z.date({ required_error: "A date is required." }),
+    assignedTechnician: z.string().min(1, "Please assign a technician"),
+});
 
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const { toast } = useToast();
     const [location, setLocation] = useState<Location | null>(null);
-    const [date, setDate] = useState<Date | undefined>();
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [technicians, setTechnicians] = useState<User[]>([]);
+
+    const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm({
+        resolver: zodResolver(taskSchema),
+        defaultValues: {
+            name: '',
+            type: '',
+            description: '',
+            location: '',
+            contactPerson: '',
+            contactPhone: '',
+            date: undefined,
+            assignedTechnician: '',
+        }
+    });
+
+    useEffect(() => {
+        const q = query(collection(db, "tasks"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const tasksData: Task[] = [];
+            querySnapshot.forEach((doc) => {
+                tasksData.push({ id: doc.id, ...doc.data() } as Task);
+            });
+            setTasks(tasksData.slice(0, 5));
+        });
+
+        const techQuery = query(collection(db, "users"), where("accessLevel", "==", "Technician"));
+        const techUnsubscribe = onSnapshot(techQuery, (snapshot) => {
+            const techData: User[] = [];
+            snapshot.forEach(doc => techData.push({ id: doc.id, ...doc.data() } as User));
+            setTechnicians(techData);
+        });
+
+        return () => {
+            unsubscribe();
+            techUnsubscribe();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (location) {
+            setValue('latitude', location.lat);
+            setValue('longitude', location.lng);
+            // Simple reverse geocoding approximation
+            setValue('location', `Lat: ${location.lat.toFixed(4)}, Lng: ${location.lng.toFixed(4)}`);
+        }
+    }, [location, setValue]);
+
+    const onSubmit = async (data: z.infer<typeof taskSchema>) => {
+        try {
+            await addDoc(collection(db, 'tasks'), {
+                ...data,
+                date: format(data.date, 'yyyy-MM-dd'),
+                status: 'Incomplete',
+                jobNumber: `JB-${new Date().getTime()}`,
+                updatedBy: 'Admin', // This should be dynamic in a real app
+            });
+            toast({
+                title: "Task Created",
+                description: "The new task has been successfully added.",
+            });
+            reset();
+            setLocation(null);
+        } catch (error) {
+            console.error("Error adding document: ", error);
+            toast({
+                title: "Error",
+                description: "There was an error creating the task.",
+                variant: 'destructive',
+            });
+        }
+    };
 
     return (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -31,89 +124,115 @@ export default function TasksPage() {
                         <CardTitle>Create New Task</CardTitle>
                         <CardDescription>Fill out the details to create a new task.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="task-name">Task Name</Label>
-                            <Input id="task-name" placeholder="e.g., Server Maintenance" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="task-type">Task Type</Label>
-                            <Select>
-                                <SelectTrigger id="task-type">
-                                    <SelectValue placeholder="Select task type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {taskTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="task-desc">Task Description</Label>
-                            <Textarea id="task-desc" placeholder="Describe the task in detail (max 256 words)" maxLength={1500} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Location</Label>
-                            {apiKey ? (
-                                <APIProvider apiKey={apiKey}>
-                                    <LocationPicker onLocationChange={setLocation} />
-                                </APIProvider>
-                            ) : (
-                                <Alert variant="destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Configuration Missing</AlertTitle>
-                                    <AlertDescription>
-                                        Google Maps API key is not configured. Please add it to your .env.local file to enable the map.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                             <div className="space-y-2">
-                                <Label htmlFor="contact-person">Contact Person</Label>
-                                <Input id="contact-person" placeholder="e.g., John Doe" />
+                    <CardContent>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="task-name">Task Name</Label>
+                                <Input id="task-name" placeholder="e.g., Server Maintenance" {...register('name')} />
+                                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                             </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="contact-phone">Contact Phone</Label>
-                                <Input id="contact-phone" placeholder="e.g., 123-456-7890" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
+                            <div className="space-y-2">
+                                <Label htmlFor="task-type">Task Type</Label>
+                                <Controller
+                                    name="type"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger id="task-type">
+                                                <SelectValue placeholder="Select task type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {taskTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={setDate}
-                                    initialFocus
                                 />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="technician">Assign Technician</Label>
-                             <Select>
-                                <SelectTrigger id="technician">
-                                    <SelectValue placeholder="Select a technician" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {technicians.map(tech => <SelectItem key={tech} value={tech}>{tech}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button className="w-full">Create Task</Button>
+                                 {errors.type && <p className="text-sm text-red-500">{errors.type.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="task-desc">Task Description</Label>
+                                <Textarea id="task-desc" placeholder="Describe the task in detail (max 1500 characters)" maxLength={1500} {...register('description')} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Location</Label>
+                                {apiKey ? (
+                                    <APIProvider apiKey={apiKey}>
+                                        <LocationPicker onLocationChange={setLocation} />
+                                    </APIProvider>
+                                ) : (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Configuration Missing</AlertTitle>
+                                        <AlertDescription>
+                                            Google Maps API key is not configured. Please add it to your .env.local file to enable the map.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="contact-person">Contact Person</Label>
+                                    <Input id="contact-person" placeholder="e.g., John Doe" {...register('contactPerson')} />
+                                     {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="contact-phone">Contact Phone</Label>
+                                    <Input id="contact-phone" placeholder="e.g., 123-456-7890" {...register('contactPhone')} />
+                                    {errors.contactPhone && <p className="text-sm text-red-500">{errors.contactPhone.message}</p>}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Controller
+                                    name="date"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+                                {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="technician">Assign Technician</Label>
+                                <Controller
+                                    name="assignedTechnician"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger id="technician">
+                                                <SelectValue placeholder="Select a technician" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {technicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message}</p>}
+                            </div>
+                            <Button type="submit" className="w-full">Create Task</Button>
+                        </form>
                     </CardContent>
                 </Card>
             </div>
@@ -133,7 +252,7 @@ export default function TasksPage() {
                                </TableRow>
                            </TableHeader>
                            <TableBody>
-                               {mockTasks.slice(0, 5).map(task => (
+                               {tasks.map(task => (
                                    <TableRow key={task.id}>
                                        <TableCell className="font-medium">{task.name}</TableCell>
                                        <TableCell>{task.assignedTechnician}</TableCell>

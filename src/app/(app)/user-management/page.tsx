@@ -1,12 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Trash2, UserCheck } from 'lucide-react';
-import { mockUsers } from '@/lib/mock-data';
 import type { User, UserStatus } from '@/lib/types';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -20,17 +19,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+        const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(usersData);
+    });
+    return () => unsubscribe();
+  }, []);
   
-  const handleApprove = (userId: string) => {
-    setUsers(users.map(user => user.id === userId ? { ...user, status: 'Active' } : user));
+  const handleApprove = async (userId: string) => {
+    const userDocRef = doc(db, 'users', userId);
+    try {
+        await updateDoc(userDocRef, { status: 'Active' });
+        toast({ title: "Success", description: "User has been approved." });
+    } catch (error) {
+        toast({ title: "Error", description: "Could not approve user.", variant: "destructive" });
+    }
   };
   
-  const handleDelete = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
+  const handleDelete = async (userId: string) => {
+    try {
+        await deleteDoc(doc(db, 'users', userId));
+        toast({ title: "Success", description: "User has been deleted." });
+    } catch (error) {
+        toast({ title: "Error", description: "Could not delete user.", variant: "destructive" });
+    }
   }
 
   const getStatusBadgeVariant = (status: UserStatus) => {

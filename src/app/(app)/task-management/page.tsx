@@ -3,19 +3,32 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { mockTasks, statuses, taskTypes } from '@/lib/mock-data';
+import { statuses, taskTypes } from '@/lib/mock-data';
 import type { Task, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MapPin } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 export default function TaskManagementPage() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  useEffect(() => {
+    const q = query(collection(db, "tasks"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(tasksData);
+        setFilteredTasks(tasksData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     let tempTasks = [...tasks];

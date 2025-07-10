@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { accessLevels, mockDesignations } from "@/lib/mock-data";
+import { accessLevels } from "@/lib/mock-data";
 import type { Designation, AccessLevel } from "@/lib/types";
 import {
   AlertDialog,
@@ -20,27 +20,48 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { db } from '@/lib/firebase';
+import { collection, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function AdministratorPage() {
-  const [designations, setDesignations] = useState<Designation[]>(mockDesignations);
+  const [designations, setDesignations] = useState<Designation[]>([]);
   const [newDesignationName, setNewDesignationName] = useState('');
   const [selectedAccessLevel, setSelectedAccessLevel] = useState<AccessLevel | ''>('');
+  const { toast } = useToast();
 
-  const handleAddDesignation = () => {
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "designations"), (snapshot) => {
+        const designationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Designation));
+        setDesignations(designationsData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddDesignation = async () => {
     if (newDesignationName.trim() && selectedAccessLevel) {
-      const newDesignation: Designation = {
-        id: `DES-${new Date().getTime()}`,
-        name: newDesignationName.trim(),
-        accessLevel: selectedAccessLevel as AccessLevel,
-      };
-      setDesignations([...designations, newDesignation]);
-      setNewDesignationName('');
-      setSelectedAccessLevel('');
+      try {
+        await addDoc(collection(db, 'designations'), {
+          name: newDesignationName.trim(),
+          accessLevel: selectedAccessLevel
+        });
+        toast({ title: "Success", description: "Designation added successfully." });
+        setNewDesignationName('');
+        setSelectedAccessLevel('');
+      } catch (error) {
+        toast({ title: "Error", description: "Could not add designation.", variant: "destructive" });
+      }
     }
   };
   
-  const handleDeleteDesignation = (id: string) => {
-    setDesignations(designations.filter(d => d.id !== id));
+  const handleDeleteDesignation = async (id: string) => {
+    try {
+        await deleteDoc(doc(db, "designations", id));
+        toast({ title: "Success", description: "Designation deleted successfully." });
+    } catch (error) {
+        toast({ title: "Error", description: "Could not delete designation.", variant: "destructive" });
+    }
   }
 
   return (

@@ -5,31 +5,43 @@ import { SummaryCards } from '@/components/dashboard/summary-cards';
 import { StatusCharts } from '@/components/dashboard/status-charts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockTasks } from '@/lib/mock-data';
 import type { Task, TaskStatus } from '@/lib/types';
 import { User, Calendar, Tag, MapPin, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [summaryData, setSummaryData] = useState({ total: 0, completed: 0, incomplete: 0, cancelled: 0 });
 
   useEffect(() => {
-    // In a real app, you would fetch this data.
-    // We are adding it to state to make it interactive.
-    setTasks(mockTasks);
+    const q = query(collection(db, "tasks"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const tasksData: Task[] = [];
+      let completed = 0, incomplete = 0, cancelled = 0;
+      querySnapshot.forEach((doc) => {
+        const task = { id: doc.id, ...doc.data() } as Task;
+        tasksData.push(task);
+        if (task.status === 'Completed') completed++;
+        else if (task.status === 'Incomplete') incomplete++;
+        else if (task.status === 'Cancelled') cancelled++;
+      });
+      setTasks(tasksData);
+      setSummaryData({ total: tasksData.length, completed, incomplete, cancelled });
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleUpdateStatus = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+  const handleUpdateStatus = async (taskId: string, newStatus: TaskStatus) => {
+    const taskDocRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskDocRef, { status: newStatus });
     setIsDialogOpen(false); // Close dialog after action
   };
   
@@ -42,8 +54,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <SummaryCards />
-      <StatusCharts />
+      <SummaryCards summaryData={summaryData} />
+      <StatusCharts tasks={tasks} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
