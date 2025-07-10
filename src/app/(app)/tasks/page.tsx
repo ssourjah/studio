@@ -12,12 +12,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const [location, setLocation] = useState<Location | null>(null);
+    const [date, setDate] = useState<Date | undefined>();
 
     return (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -44,8 +48,8 @@ export default function TasksPage() {
                             </Select>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="task-desc">Description</Label>
-                            <Textarea id="task-desc" placeholder="Describe the task in detail" />
+                            <Label htmlFor="task-desc">Task Description</Label>
+                            <Textarea id="task-desc" placeholder="Describe the task in detail (max 256 words)" maxLength={1500} />
                         </div>
                         <div className="space-y-2">
                             <Label>Location</Label>
@@ -62,6 +66,41 @@ export default function TasksPage() {
                                     </AlertDescription>
                                 </Alert>
                             )}
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="contact-person">Contact Person</Label>
+                                <Input id="contact-person" placeholder="e.g., John Doe" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="contact-phone">Contact Phone</Label>
+                                <Input id="contact-phone" placeholder="e.g., 123-456-7890" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="date">Date</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="technician">Assign Technician</Label>
