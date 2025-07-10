@@ -30,6 +30,8 @@ import {
   User as UserIcon,
   LogOut,
   LifeBuoy,
+  Users,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -41,6 +43,13 @@ const menuItems = [
   { href: '/reports', label: 'Reports', icon: FileText },
 ];
 
+const userMenuItems = [
+    { href: '/administrator', label: 'Administrator', icon: Shield },
+    { href: '/task-management', label: 'Task Management', icon: ListTodo },
+    { href: '/user-management', label: 'User Management', icon: Users },
+    { href: '/settings', label: 'Settings', icon: Settings },
+]
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -51,22 +60,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <AppLogo />
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={{ children: item.label }}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <div className="group/menu-item relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 cursor-pointer">
+                              <Avatar className="h-8 w-8">
+                                  <AvatarImage src="https://placehold.co/40x40.png" alt="@admin" data-ai-hint="profile picture" />
+                                  <AvatarFallback>AD</AvatarFallback>
+                              </Avatar>
+                              <div className="hidden group-data-[state=expanded]:block">
+                                  <p className="font-medium text-sidebar-foreground">Admin Menu</p>
+                              </div>
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start" className="w-56">
+                          <DropdownMenuLabel>Management</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                           {userMenuItems.map((item) => (
+                                <DropdownMenuItem key={item.href} asChild>
+                                    <Link href={item.href}><item.icon className="mr-2 h-4 w-4" />{item.label}</Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                </SidebarMenuItem>
+            </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
            <DropdownMenu>
