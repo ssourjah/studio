@@ -1,13 +1,26 @@
+'use client';
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
+import { useSettings } from '@/context/SettingsContext';
+import Image from 'next/image';
 
-export function AppLogo() {
+interface AppLogoProps {
+  showName?: boolean;
+}
+
+export function AppLogo({ showName = true }: AppLogoProps) {
+  const { companyName, logoUrl } = useSettings();
+
   return (
     <Link href="/dashboard" className="flex items-center gap-2.5 text-foreground font-bold text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-2 -ml-2 mr-6">
-      <div className="bg-primary p-2 rounded-lg">
-        <BarChart3 className="h-5 w-5 text-primary-foreground" />
+      <div className="bg-primary p-2 rounded-lg flex items-center justify-center h-9 w-9">
+        {logoUrl ? (
+          <Image src={logoUrl} alt={`${companyName} Logo`} width={20} height={20} className="object-contain h-5 w-5" />
+        ) : (
+          <BarChart3 className="h-5 w-5 text-primary-foreground" />
+        )}
       </div>
-      <span className="font-headline">TaskMaster Pro</span>
+      {showName && <span className="font-headline">{companyName}</span>}
     </Link>
   );
 }

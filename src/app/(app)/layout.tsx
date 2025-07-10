@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useSettings } from '@/context/SettingsContext';
 
 const userMenuItems = [
   { href: '/profile', label: 'Profile', icon: UserIcon },
@@ -36,6 +37,7 @@ const adminMenuItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { companyName } = useSettings();
 
   return (
     <div className="flex min-h-screen flex-col">
