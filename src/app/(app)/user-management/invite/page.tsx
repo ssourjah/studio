@@ -11,8 +11,9 @@ import { accessLevels } from "@/lib/mock-data";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const userSchema = z.object({
@@ -29,21 +30,38 @@ const userSchema = z.object({
 
 export default function InviteUserPage() {
   const { toast } = useToast();
-  const { control, register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
   });
 
   const onRegisterSubmit = async (data: z.infer<typeof userSchema>) => {
     try {
-      await addDoc(collection(db, "users"), {
-        ...data,
+      // This is a temporary admin function to create a user directly.
+      // In a real app, you would use a more secure admin SDK on a server.
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        id: user.uid,
+        name: data.name,
+        username: data.username,
+        email: data.email,
+        phone: data.phone || '',
+        employeeId: data.employeeId || '',
+        department: data.department || '',
+        designation: data.designation || '',
+        accessLevel: data.accessLevel,
         status: 'Active' // Manually registered users are active by default
       });
       toast({ title: "User Created", description: "The new user has been registered." });
       reset();
-    } catch (e) {
+    } catch (e: any) {
+      let description = "Failed to create user.";
+      if (e.code === 'auth/email-already-in-use') {
+        description = "This email is already in use by another account.";
+      }
       console.error("Error adding document: ", e);
-      toast({ title: "Error", description: "Failed to create user.", variant: "destructive" });
+      toast({ title: "Error", description, variant: "destructive" });
     }
   };
 
@@ -134,9 +152,9 @@ export default function InviteUserPage() {
                         <Input id="password" type="password" {...register("password")} />
                         {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
                     </div>
-                    <Button type="submit">
+                    <Button type="submit" disabled={isSubmitting}>
                         <UserPlus className="mr-2 h-4 w-4" />
-                        Create User Account
+                        {isSubmitting ? 'Creating...' : 'Create User Account'}
                     </Button>
                 </form>
             </CardContent>

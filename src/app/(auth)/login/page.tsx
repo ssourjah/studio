@@ -10,14 +10,15 @@ import { Label } from "@/components/ui/label";
 import { AppLogo } from "@/components/app-logo";
 import { useSettings } from "@/context/SettingsContext";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LoginPage() {
   const { companyName } = useSettings();
   const { toast } = useToast();
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,10 +26,10 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!username || !password) {
+    if (!email || !password) {
       toast({
         title: "Login Error",
-        description: "Please enter both username and password.",
+        description: "Please enter both email and password.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -36,42 +37,36 @@ export default function LoginPage() {
     }
 
     try {
-      const usersRef = collection(db, "users");
-      const q = query(
-        usersRef, 
-        where("username", "==", username), 
-        where("password", "==", password)
-      );
-      
-      const querySnapshot = await getDocs(q);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      if (querySnapshot.empty) {
+      // Check user status in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().status === 'Active') {
         toast({
-          title: "Login Failed",
-          description: "Invalid username or password.",
-          variant: "destructive",
+            title: "Login Successful",
+            description: `Welcome back, ${userDoc.data().name}!`,
         });
+        router.push('/dashboard');
       } else {
-        const userDoc = querySnapshot.docs[0].data();
-        if (userDoc.status !== 'Active') {
-             toast({
-                title: "Login Failed",
-                description: "Your account is not active. Please contact an administrator.",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Login Successful",
-                description: `Welcome back, ${userDoc.name}!`,
-            });
-            router.push('/dashboard');
-        }
+        await auth.signOut(); // Sign out user if not active or doesn't exist in DB
+        toast({
+            title: "Login Failed",
+            description: "Your account is not active or not found. Please contact an administrator.",
+            variant: "destructive",
+        });
       }
-    } catch (error) {
-      console.error("Authentication error: ", error);
+
+    } catch (error: any) {
+      let description = "An error occurred during login. Please try again.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "Invalid email or password.";
+      }
       toast({
-        title: "Error",
-        description: "An error occurred during login. Please try again.",
+        title: "Login Failed",
+        description,
         variant: "destructive",
       });
     } finally {
@@ -88,19 +83,19 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl">Login</CardTitle>
             <CardDescription>
-              Enter your username below to login to your account.
+              Enter your email below to login to your account.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input 
-                id="username" 
-                type="text" 
-                placeholder="admin" 
+                id="email" 
+                type="email" 
+                placeholder="admin@taskmaster.pro" 
                 required 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
               />
             </div>
