@@ -38,11 +38,13 @@ export default function InviteUserPage() {
 
   const onRegisterSubmit = async (data: z.infer<typeof userSchema>) => {
     try {
+      // Step 1: Create the user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
+      // Step 2: Create the user document in Firestore, using the UID from Auth as the document ID
       await setDoc(doc(db, "users", user.uid), {
-        id: user.uid,
+        id: user.uid, // Explicitly linking the document to the auth user
         name: data.name,
         username: data.username,
         email: data.email,
@@ -53,8 +55,10 @@ export default function InviteUserPage() {
         accessLevel: data.accessLevel,
         status: 'Active'
       });
+
       toast({ title: "User Created", description: "The new user has been registered." });
       reset();
+
     } catch (e: any) {
       let description = "Failed to create user.";
       if (e.code === 'auth/email-already-in-use') {
