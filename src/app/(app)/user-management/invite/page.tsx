@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -37,8 +38,6 @@ export default function InviteUserPage() {
 
   const onRegisterSubmit = async (data: z.infer<typeof userSchema>) => {
     try {
-      // This is a temporary admin function to create a user directly.
-      // In a real app, you would use a more secure admin SDK on a server.
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
@@ -52,7 +51,7 @@ export default function InviteUserPage() {
         department: data.department || '',
         designation: data.designation || '',
         accessLevel: data.accessLevel,
-        status: 'Active' // Manually registered users are active by default
+        status: 'Active'
       });
       toast({ title: "User Created", description: "The new user has been registered." });
       reset();
@@ -66,7 +65,6 @@ export default function InviteUserPage() {
     }
   };
 
-  // Placeholder for invite functionality
   const onInviteSubmit = (data: any) => {
     console.log("Invite data:", data);
     toast({ title: "Invitation Sent", description: `An invitation has been sent to ${data.inviteEmail}.` });

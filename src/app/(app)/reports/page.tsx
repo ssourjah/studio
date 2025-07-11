@@ -1,5 +1,6 @@
+
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,10 @@ export default function ReportsPage() {
             techUnsubscribe();
         };
     }, []);
+
+    const sortedTasks = useMemo(() => {
+        return [...tasks].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [tasks]);
 
     const handleNavigate = (lat: number, lng: number) => {
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -130,7 +135,7 @@ export default function ReportsPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {tasks.map((task) => (
+                {sortedTasks.map((task) => (
                     <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.jobNumber}</TableCell>
                     <TableCell>{task.name}</TableCell>
