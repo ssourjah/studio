@@ -1,3 +1,4 @@
+
 'use client';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const registerSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -28,11 +30,13 @@ const registerSchema = z.object({
 export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof registerSchema>>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema)
   });
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    setIsSubmitting(true);
     try {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -68,6 +72,8 @@ export default function RegisterPage() {
         description,
         variant: "destructive",
       });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
