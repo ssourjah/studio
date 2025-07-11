@@ -64,6 +64,7 @@ export default function LoginPage() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Invalid email or password.";
       }
+      console.log(error)
       toast({
         title: "Login Failed",
         description,
