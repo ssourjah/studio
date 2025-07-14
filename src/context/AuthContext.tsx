@@ -29,11 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (user) {
-        // If user is authenticated, we can proceed to get their data
-        // The user data listener is set up in the next useEffect, and loading
-        // will be handled there after data is fetched.
-      } else {
+      if (!user) {
         // User is logged out, clear all data and finish loading.
         setCurrentUser(null);
         setUserRole(null);
@@ -77,11 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserRole(null);
           setLoading(false); // Finish loading
         }
+      }, (error) => {
+          // Handle errors, e.g. permission denied
+          console.error("Error fetching user document:", error);
+          setCurrentUser(null);
+          setUserRole(null);
+          setLoading(false);
       });
-    } else {
-      // No firebaseUser, so we are not waiting for any data.
-      // The onAuthStateChanged listener handles setting loading to false.
     }
+    // No 'else' here, because the case where firebaseUser is null
+    // is handled by the onAuthStateChanged listener.
 
     return () => {
       if (unsubscribeUser) unsubscribeUser();
@@ -107,10 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
   };
 
-  // Do not render children until the initial auth check and data fetch is complete
   return (
     <AuthContext.Provider value={value}>
-      {loading ? null : children}
+      {children}
     </AuthContext.Provider>
   );
 }
