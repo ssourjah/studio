@@ -33,7 +33,7 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="break-words">
         <DialogHeader>
           <DialogTitle>{task.name}</DialogTitle>
           <DialogDescription>{task.jobNumber}</DialogDescription>
