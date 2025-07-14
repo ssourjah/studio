@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Trash2, UserCheck, Edit } from 'lucide-react';
-import type { User, UserStatus, Designation } from '@/lib/types';
+import type { User, UserStatus, Role } from '@/lib/types';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
@@ -28,7 +28,7 @@ import { EditUserDialog } from '@/components/user-management/edit-user-dialog';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const { toast } = useToast();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -38,13 +38,13 @@ export default function UserManagementPage() {
         const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         setUsers(usersData);
     });
-    const unsubscribeDesignations = onSnapshot(collection(db, "designations"), (snapshot) => {
-      const designationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Designation));
-      setDesignations(designationsData);
+    const unsubscribeRoles = onSnapshot(collection(db, "roles"), (snapshot) => {
+      const rolesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
+      setRoles(rolesData);
     });
     return () => {
       unsubscribeUsers();
-      unsubscribeDesignations();
+      unsubscribeRoles();
     };
   }, []);
   
@@ -100,6 +100,12 @@ export default function UserManagementPage() {
     }
   };
 
+  const getRoleName = (roleId?: string) => {
+    if (!roleId) return 'N/A';
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.name : 'Unknown Role';
+  }
+
   return (
     <>
       <Card>
@@ -122,8 +128,7 @@ export default function UserManagementPage() {
                       <TableRow>
                           <TableHead>Full Name</TableHead>
                           <TableHead>Email</TableHead>
-                          <TableHead>Designation</TableHead>
-                          <TableHead>Access Level</TableHead>
+                          <TableHead>Role</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -133,8 +138,7 @@ export default function UserManagementPage() {
                           <TableRow key={user.id}>
                               <TableCell className="font-medium">{user.name}</TableCell>
                               <TableCell>{user.email}</TableCell>
-                              <TableCell>{user.designation}</TableCell>
-                              <TableCell>{user.accessLevel}</TableCell>
+                              <TableCell>{getRoleName(user.roleId)}</TableCell>
                               <TableCell>
                                   <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeVariant(user.status))}>
                                       {user.status}
@@ -195,7 +199,7 @@ export default function UserManagementPage() {
           isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           user={selectedUser}
-          designations={designations}
+          roles={roles}
           onUpdateUser={handleUpdateUser}
         />
       )}

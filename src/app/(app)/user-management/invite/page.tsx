@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, UserPlus, Mail } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { accessLevels } from "@/lib/mock-data";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +16,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, collection, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import type { Designation } from "@/lib/types";
+import type { Role } from "@/lib/types";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -27,22 +25,21 @@ const userSchema = z.object({
   phone: z.string().optional(),
   employeeId: z.string().optional(),
   department: z.string().optional(),
-  designation: z.string().optional(),
-  accessLevel: z.string().min(1, "Access level is required"),
+  roleId: z.string().min(1, "A role is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function InviteUserPage() {
   const { toast } = useToast();
-  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
   });
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "designations"), (snapshot) => {
-      const designationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Designation));
-      setDesignations(designationsData);
+    const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
+      const rolesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
+      setRoles(rolesData);
     });
     return () => unsubscribe();
   }, []);
@@ -62,9 +59,8 @@ export default function InviteUserPage() {
         phone: data.phone || '',
         employeeId: data.employeeId || '',
         department: data.department || '',
-        designation: data.designation || '',
-        accessLevel: data.accessLevel,
-        status: 'Active'
+        roleId: data.roleId,
+        status: 'Active' // Manually added users are active by default
       });
 
       toast({ title: "User Created", description: "The new user has been registered." });
@@ -139,46 +135,30 @@ export default function InviteUserPage() {
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="designation">Designation</Label>
+                            <Label htmlFor="role">Role</Label>
                             <Controller
-                                name="designation"
+                                name="roleId"
                                 control={control}
                                 render={({ field }) => (
                                     <Select onValueChange={field.onChange} value={field.value}>
-                                        <SelectTrigger id="designation">
-                                            <SelectValue placeholder="Select a designation" />
+                                        <SelectTrigger id="role">
+                                            <SelectValue placeholder="Select a role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {designations.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                                            {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 )}
                             />
+                            {errors.roleId && <p className="text-red-500 text-sm">{errors.roleId.message as string}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="access-level-register">Access Level</Label>
-                            <Controller
-                                name="accessLevel"
-                                control={control}
-                                render={({ field }) => (
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <SelectTrigger id="access-level-register">
-                                            <SelectValue placeholder="Select an access level" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {accessLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            />
-                            {errors.accessLevel && <p className="text-red-500 text-sm">{errors.accessLevel.message as string}</p>}
+                           <Label htmlFor="password">Password</Label>
+                           <Input id="password" type="password" {...register("password")} />
+                           {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" {...register("password")} />
-                        {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
-                    </div>
+                    
                     <Button type="submit" disabled={isSubmitting}>
                         <UserPlus className="mr-2 h-4 w-4" />
                         {isSubmitting ? 'Creating...' : 'Create User Account'}
@@ -213,13 +193,13 @@ export default function InviteUserPage() {
                     </div>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="access-level-invite">Access Level</Label>
+                    <Label htmlFor="access-level-invite">Role</Label>
                     <Select>
                         <SelectTrigger id="access-level-invite">
-                            <SelectValue placeholder="Select an access level" />
+                            <SelectValue placeholder="Select a role for the invitee" />
                         </SelectTrigger>
                         <SelectContent>
-                             {accessLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                             {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
@@ -232,5 +212,3 @@ export default function InviteUserPage() {
     </div>
   );
 }
-
-    

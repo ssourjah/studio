@@ -87,7 +87,7 @@ export default function ProfilePage() {
                         <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">{currentUser.name}</h2>
-                    <p className="text-muted-foreground">{currentUser.designation || 'N/A'}</p>
+                    <p className="text-muted-foreground">{currentUser.roleId || 'N/A'}</p>
                     <div className="flex flex-col gap-2 mt-4 w-full px-6">
                         <Button variant="outline" onClick={handleAvatarClick} suppressHydrationWarning>
                             Change Picture
@@ -138,19 +138,15 @@ export default function ProfilePage() {
                             <Label htmlFor="employee-id">Employee ID</Label>
                             <Input id="employee-id" defaultValue={currentUser.employeeId} disabled />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="designation">Designation</Label>
-                            <Input id="designation" defaultValue={currentUser.designation} />
-                        </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                         <div className="space-y-2">
                             <Label htmlFor="department">Department</Label>
                             <Input id="department" defaultValue={currentUser.department} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="access-level">Access Level</Label>
-                            <Input id="access-level" defaultValue={currentUser.accessLevel} disabled />
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                            <Label htmlFor="role">Role</Label>
+                            <Input id="role" defaultValue={currentUser.roleId} disabled />
                         </div>
                     </div>
                     <Button suppressHydrationWarning>Save Changes</Button>

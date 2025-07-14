@@ -1,4 +1,5 @@
 
+
 export type TaskStatus = 'Incomplete' | 'Completed' | 'Cancelled';
 
 export type Task = {
@@ -30,14 +31,22 @@ export type User = {
     phone: string;
     employeeId: string;
     department: string;
-    designation: string;
-    accessLevel: AccessLevel;
+    roleId?: string;
+    accessLevel: AccessLevel; // Will be deprecated, but keep for now
     status: UserStatus;
     avatarUrl?: string;
 };
 
-export type Designation = {
+export type Permission = {
+  read: boolean;
+  write: boolean;
+  admin: boolean;
+}
+
+export type PermissionLevel = 'dashboard' | 'tasks' | 'taskManagement' | 'userManagement' | 'reports' | 'settings' | 'administrator';
+
+export type Role = {
   id: string;
   name: string;
-  accessLevel: AccessLevel;
-};
+  permissions: Record<PermissionLevel, Permission>;
+}
