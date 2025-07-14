@@ -51,8 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsubscribeRole: () => void;
+    let roleLoading = false;
 
     if (currentUser && currentUser.roleId) {
+        roleLoading = true;
         setLoading(true);
         const roleDocRef = doc(db, 'roles', currentUser.roleId);
         unsubscribeRole = onSnapshot(roleDocRef, (docSnap) => {
@@ -62,9 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUserRole(null);
             }
             setLoading(false);
+            roleLoading = false;
         });
     } else {
        setUserRole(null);
+       if (!roleLoading) {
+           setLoading(false);
+       }
     }
     
     return () => {
