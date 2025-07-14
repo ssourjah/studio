@@ -30,16 +30,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
+        // User is logged in, fetch their data
         const userDocRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const userData = { id: docSnap.id, ...docSnap.data() } as User;
-          setCurrentUser(userData);
-        } else {
-          setCurrentUser(null);
-          setUserRole(null);
+        try {
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+              const userData = { id: docSnap.id, ...docSnap.data() } as User;
+              setCurrentUser(userData);
+            } else {
+              // User exists in Auth but not in Firestore, treat as logged out
+              setCurrentUser(null);
+              setUserRole(null);
+            }
+        } catch (error) {
+            // Likely a permission error if rules are not set up correctly for users to read their own doc
+            console.error("Error fetching user document:", error);
+            setCurrentUser(null);
+            setUserRole(null);
         }
       } else {
+        // User is logged out
         setCurrentUser(null);
         setUserRole(null);
       }
@@ -50,36 +60,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let unsubscribeRole: () => void;
-    let roleLoading = false;
-
-    if (currentUser && currentUser.roleId) {
-        roleLoading = true;
-        setLoading(true);
-        const roleDocRef = doc(db, 'roles', currentUser.roleId);
-        unsubscribeRole = onSnapshot(roleDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setUserRole({ id: docSnap.id, ...docSnap.data() } as Role);
-            } else {
-                setUserRole(null);
-            }
-            setLoading(false);
-            roleLoading = false;
-        });
-    } else {
-       setUserRole(null);
-       if (!roleLoading) {
-           setLoading(false);
-       }
-    }
-    
-    return () => {
-        if (unsubscribeRole) {
-            unsubscribeRole();
+    let unsubscribeRole: (() => void) | undefined;
+  
+    if (currentUser?.roleId) {
+      const roleDocRef = doc(db, 'roles', currentUser.roleId);
+      unsubscribeRole = onSnapshot(
+        roleDocRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            setUserRole({ id: docSnap.id, ...docSnap.data() } as Role);
+          } else {
+            setUserRole(null);
+          }
+        },
+        (error) => {
+          console.error('Error fetching role:', error);
+          setUserRole(null);
         }
+      );
+    } else {
+      setUserRole(null);
+    }
+  
+    return () => {
+      if (unsubscribeRole) {
+        unsubscribeRole();
+      }
     };
-
-  }, [currentUser]);
+  }, [currentUser?.roleId]);
 
 
   const logout = async () => {
@@ -99,7 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  // Do not render children until the initial auth check is complete
+  return (
+    <AuthContext.Provider value={value}>
+      {loading ? null : children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
