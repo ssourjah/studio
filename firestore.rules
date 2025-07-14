@@ -1,0 +1,71 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to get the user's role data
+    function getUserRole() {
+      // Get the user's document from the 'users' collection
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // Get the role document using the roleId from the user's document
+      let roleDoc = get(/databases/$(database)/documents/roles/$(userDoc.roleId)).data;
+      return roleDoc;
+    }
+
+    // Helper function to check if the user has a specific permission
+    function hasPermission(service, permission) {
+      let role = getUserRole();
+      return role.permissions[service][permission] == true;
+    }
+
+    match /users/{userId} {
+      // Allow read access to one's own document or if user has userManagement read permission
+      allow read: if request.auth.uid == userId || hasPermission('userManagement', 'read');
+
+      // Allow creating a user if they are registering (auth uid matches) or if an admin is creating them
+      allow create: if request.auth.uid == userId || hasPermission('userManagement', 'create');
+      
+      // Allow updating one's own profile (specific fields) or if user has userManagement edit permission
+      allow update: if (request.auth.uid == userId && request.resource.data.keys().hasOnly(['name', 'username', 'phone', 'avatarUrl', 'department']))
+                    || hasPermission('userManagement', 'edit');
+
+      // Allow deleting a user if they have userManagement delete permission
+      allow delete: if hasPermission('userManagement', 'delete');
+    }
+
+    match /tasks/{taskId} {
+      // Allow read if user has read permission for 'tasks' or 'taskManagement'
+      allow read: if hasPermission('tasks', 'read') || hasPermission('taskManagement', 'read');
+      
+      // Allow create if user has create permission for 'tasks'
+      allow create: if hasPermission('tasks', 'create');
+
+      // Allow update if user has edit permission for 'taskManagement'
+      allow update: if hasPermission('taskManagement', 'edit');
+
+      // Allow delete if user has delete permission for 'taskManagement'
+      allow delete: if hasPermission('taskManagement', 'delete');
+    }
+
+    match /roles/{roleId} {
+      // Allow full access only to users with administrator permissions
+      allow read: if hasPermission('administrator', 'read');
+      allow create: if hasPermission('administrator', 'create');
+      allow update: if hasPermission('administrator', 'edit');
+      allow delete: if hasPermission('administrator', 'delete');
+    }
+
+    match /settings/company {
+      // Anyone authenticated can read settings (for company name, logo)
+      allow read: if request.auth != null;
+      // Allow update only if user has settings edit permission
+      allow write: if hasPermission('settings', 'edit');
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
