@@ -6,8 +6,7 @@
  * - SendInviteInput - The input type for the sendInvite function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { sendEmail } from '@/services/email';
 
 export const SendInviteInputSchema = z.object({
@@ -18,16 +17,6 @@ export const SendInviteInputSchema = z.object({
 export type SendInviteInput = z.infer<typeof SendInviteInputSchema>;
 
 export async function sendInvite(input: SendInviteInput): Promise<void> {
-  return sendInviteFlow(input);
-}
-
-const sendInviteFlow = ai.defineFlow(
-  {
-    name: 'sendInviteFlow',
-    inputSchema: SendInviteInputSchema,
-    outputSchema: z.void(),
-  },
-  async (input) => {
     // In a real application, you would generate a unique, single-use registration token,
     // store it, and include it in the URL. For simplicity, we'll just link to the
     // standard registration page.
@@ -49,5 +38,4 @@ const sendInviteFlow = ai.defineFlow(
       subject: subject,
       html: emailBody,
     });
-  }
-);
+}
