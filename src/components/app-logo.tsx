@@ -1,3 +1,4 @@
+
 'use client';
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
@@ -22,7 +23,7 @@ export function AppLogo({ showName = true }: AppLogoProps) {
           </div>
         )}
       </div>
-      {showName && <span className="font-headline">TaskMaster Pro</span>}
+      {showName && <span className="font-headline">{companyName}</span>}
     </Link>
   );
 }
