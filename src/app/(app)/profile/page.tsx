@@ -1,3 +1,4 @@
+
 'use client';
 import { useRef, ChangeEvent, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,11 +47,11 @@ export default function ProfilePage() {
                     <h2 className="text-xl font-bold">Admin User</h2>
                     <p className="text-muted-foreground">System Administrator</p>
                     <div className="flex flex-col gap-2 mt-4 w-full px-6">
-                        <Button variant="outline" onClick={handleAvatarClick}>
+                        <Button variant="outline" onClick={handleAvatarClick} suppressHydrationWarning>
                             Change Picture
                         </Button>
                          {previewUrl && (
-                            <Button onClick={handleSavePicture}>Save Picture</Button>
+                            <Button onClick={handleSavePicture} suppressHydrationWarning>Save Picture</Button>
                         )}
                     </div>
                     <Input 
@@ -110,7 +111,7 @@ export default function ProfilePage() {
                             <Input id="access-level" defaultValue="Admin" disabled />
                         </div>
                     </div>
-                    <Button>Save Changes</Button>
+                    <Button suppressHydrationWarning>Save Changes</Button>
                 </CardContent>
              </Card>
 
@@ -128,7 +129,7 @@ export default function ProfilePage() {
                         <Label htmlFor="new-password">New Password</Label>
                         <Input id="new-password" type="password" />
                     </div>
-                    <Button>Update Password</Button>
+                    <Button suppressHydrationWarning>Update Password</Button>
                 </CardContent>
              </Card>
         </div>

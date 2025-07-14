@@ -1,3 +1,4 @@
+
 'use client';
 import { AppLogo } from '@/components/app-logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,7 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 items-center justify-end gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="flex items-center gap-2" suppressHydrationWarning>
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={avatarUrl || "https://placehold.co/40x40.png"}

@@ -68,7 +68,7 @@ export default function AdministratorPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       <Card>
         <CardHeader>
           <CardTitle>Manage Designations</CardTitle>
@@ -138,7 +138,7 @@ export default function AdministratorPage() {
                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                           This action cannot be undone. This will permanently delete the <strong>{designation.name}</strong> designation.
-                                        </Description>
+                                        </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
