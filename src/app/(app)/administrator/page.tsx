@@ -36,7 +36,7 @@ const services: { id: PermissionLevel; name: string; description: string }[] = [
 ];
 
 const initialPermissions = services.reduce((acc, service) => {
-    acc[service.id] = { read: false, create: false, edit: false, admin: false };
+    acc[service.id] = { read: false, create: false, edit: false, delete: false };
     return acc;
 }, {} as Record<PermissionLevel, Permission>);
 
@@ -154,7 +154,7 @@ export default function AdministratorPage() {
                                     <TableHead className="text-center">Read</TableHead>
                                     <TableHead className="text-center">Create</TableHead>
                                     <TableHead className="text-center">Edit</TableHead>
-                                    <TableHead className="text-center">Admin</TableHead>
+                                    <TableHead className="text-center">Delete</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -173,7 +173,7 @@ export default function AdministratorPage() {
                                                 </Tooltip>
                                             </div>
                                         </TableCell>
-                                        {(['read', 'create', 'edit', 'admin'] as const).map(level => (
+                                        {(['read', 'create', 'edit', 'delete'] as const).map(level => (
                                             <TableCell key={level} className="text-center">
                                                 <Checkbox
                                                     checked={permissions[service.id]?.[level] || false}

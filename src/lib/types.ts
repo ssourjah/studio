@@ -41,7 +41,7 @@ export type Permission = {
   read: boolean;
   create: boolean;
   edit: boolean;
-  admin: boolean;
+  delete: boolean;
 }
 
 export type PermissionLevel = 'dashboard' | 'tasks' | 'taskManagement' | 'userManagement' | 'reports' | 'settings' | 'administrator';
