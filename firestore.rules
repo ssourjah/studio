@@ -1,9 +1,8 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper Functions
+    
     function isAuth() {
       return request.auth != null;
     }
@@ -12,20 +11,25 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getRole() {
-      let roleId = getUserData().roleId;
-      if (roleId == null) {
-        return null;
-      }
+    function getRoleData(roleId) {
       return get(/databases/$(database)/documents/roles/$(roleId)).data;
     }
 
-    function hasPermission(service, level) {
-      let role = getRole();
-      return role != null && role.permissions[service][level] == true;
+    // Check if the authenticated user has a specific permission level for a given service.
+    // serviceID: The name of the service/page (e.g., 'tasks', 'userManagement').
+    // level: The permission level to check (e.g., 'read', 'create', 'edit', 'delete').
+    function hasPermission(serviceID, level) {
+      let userData = getUserData();
+      if (!('roleId' in userData)) {
+        return false;
+      }
+      let roleData = getRoleData(userData.roleId);
+      if (!('permissions' in roleData) || !(serviceID in roleData.permissions) || !(level in roleData.permissions[serviceID])) {
+        return false;
+      }
+      return roleData.permissions[serviceID][level] == true;
     }
 
-    // Rules for 'users' collection
     match /users/{userId} {
       allow read: if isAuth() && (request.auth.uid == userId || hasPermission('userManagement', 'read'));
       allow create: if isAuth() && hasPermission('userManagement', 'create');
@@ -33,7 +37,6 @@ service cloud.firestore {
       allow delete: if isAuth() && hasPermission('userManagement', 'delete');
     }
 
-    // Rules for 'tasks' collection
     match /tasks/{taskId} {
       allow read: if isAuth() && (hasPermission('tasks', 'read') || hasPermission('taskManagement', 'read'));
       allow create: if isAuth() && hasPermission('tasks', 'create');
@@ -41,19 +44,15 @@ service cloud.firestore {
       allow delete: if isAuth() && hasPermission('taskManagement', 'delete');
     }
 
-    // Rules for 'roles' collection
     match /roles/{roleId} {
-      allow read: if isAuth() && hasPermission('administrator', 'read');
-      allow create: if isAuth() && hasPermission('administrator', 'create');
-      allow update: if isAuth() && hasPermission('administrator', 'edit');
-      allow delete: if isAuth() && hasPermission('administrator', 'delete');
+        allow read: if isAuth() && hasPermission('administrator', 'read');
+        allow create: if isAuth() && hasPermission('administrator', 'create');
+        allow update: if isAuth() && hasPermission('administrator', 'edit');
+        allow delete: if isAuth() && hasPermission('administrator', 'delete');
     }
 
-    // Rules for 'settings' collection
-    match /settings/{docId} {
-      // Allow anyone to read company settings for login page display
-      allow read: if docId == 'company'; 
-      // Only authenticated users with 'settings' edit permission can write
+    match /settings/company {
+      allow read: if true; // Publicly readable for login page
       allow write: if isAuth() && hasPermission('settings', 'edit');
     }
   }
