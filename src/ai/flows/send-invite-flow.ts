@@ -6,15 +6,13 @@
  * - SendInviteInput - The input type for the sendInvite function.
  */
 
-import { z } from 'zod';
 import { sendEmail } from '@/services/email';
 
-export const SendInviteInputSchema = z.object({
-  name: z.string().describe('The full name of the user to invite.'),
-  email: z.string().email().describe('The email address of the user to invite.'),
-  roleId: z.string().describe('The ID of the role to assign to the new user.'),
-});
-export type SendInviteInput = z.infer<typeof SendInviteInputSchema>;
+export interface SendInviteInput {
+  name: string;
+  email: string;
+  roleId: string;
+}
 
 export async function sendInvite(input: SendInviteInput): Promise<void> {
     // In a real application, you would generate a unique, single-use registration token,
