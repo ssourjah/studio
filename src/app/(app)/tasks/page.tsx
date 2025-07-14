@@ -25,6 +25,7 @@ import { collection, addDoc, onSnapshot, query, where } from 'firebase/firestore
 import { useToast } from '@/hooks/use-toast';
 import type { Task, User } from '@/lib/types';
 import { taskTypes } from '@/lib/mock-data';
+import { useAuth } from '@/context/AuthContext';
 
 const taskSchema = z.object({
     name: z.string().min(1, "Task name is required"),
@@ -42,9 +43,12 @@ const taskSchema = z.object({
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const { toast } = useToast();
+    const { userRole } = useAuth();
     const [location, setLocation] = useState<Location | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [technicians, setTechnicians] = useState<User[]>([]);
+
+    const canCreateTasks = userRole?.permissions?.tasks?.create ?? false;
 
     const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm({
         resolver: zodResolver(taskSchema),
@@ -93,6 +97,15 @@ export default function TasksPage() {
     }, [location, setValue]);
 
     const onSubmit = async (data: z.infer<typeof taskSchema>) => {
+        if (!canCreateTasks) {
+            toast({
+                title: "Permission Denied",
+                description: "You do not have permission to create tasks.",
+                variant: 'destructive',
+            });
+            return;
+        }
+
         try {
             await addDoc(collection(db, 'tasks'), {
                 ...data,
@@ -126,115 +139,125 @@ export default function TasksPage() {
                         <CardDescription>Fill out the details to create a new task.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="task-name">Task Name</Label>
-                                <Input id="task-name" placeholder="e.g., Server Maintenance" {...register('name')} />
-                                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="task-type">Task Type</Label>
-                                <Controller
-                                    name="type"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <SelectTrigger id="task-type">
-                                                <SelectValue placeholder="Select task type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {taskTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                 {errors.type && <p className="text-sm text-red-500">{errors.type.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="task-desc">Task Description</Label>
-                                <Textarea id="task-desc" placeholder="Describe the task in detail (max 256 words)" maxLength={256} {...register('description')} />
-                                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Location</Label>
-                                {apiKey ? (
-                                    <APIProvider apiKey={apiKey}>
-                                        <LocationPicker onLocationChange={setLocation} />
-                                    </APIProvider>
-                                ) : (
-                                    <Alert variant="destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertTitle>Configuration Missing</AlertTitle>
-                                        <AlertDescription>
-                                            Google Maps API key is not configured. Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable the map.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
+                        {canCreateTasks ? (
+                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="contact-person">Contact Person</Label>
-                                    <Input id="contact-person" placeholder="e.g., John Doe" {...register('contactPerson')} />
-                                     {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson.message as string}</p>}
+                                    <Label htmlFor="task-name">Task Name</Label>
+                                    <Input id="task-name" placeholder="e.g., Server Maintenance" {...register('name')} />
+                                    {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="contact-phone">Contact Phone</Label>
-                                    <Input id="contact-phone" placeholder="e.g., 123-456-7890" {...register('contactPhone')} />
-                                    {errors.contactPhone && <p className="text-sm text-red-500">{errors.contactPhone.message as string}</p>}
+                                    <Label htmlFor="task-type">Task Type</Label>
+                                    <Controller
+                                        name="type"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <SelectTrigger id="task-type">
+                                                    <SelectValue placeholder="Select task type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {taskTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                    {errors.type && <p className="text-sm text-red-500">{errors.type.message}</p>}
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="date">Date</Label>
-                                <Controller
-                                    name="date"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full justify-start text-left font-normal",
-                                                        !field.value && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                <div className="space-y-2">
+                                    <Label htmlFor="task-desc">Task Description</Label>
+                                    <Textarea id="task-desc" placeholder="Describe the task in detail (max 256 words)" maxLength={256} {...register('description')} />
+                                    {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Location</Label>
+                                    {apiKey ? (
+                                        <APIProvider apiKey={apiKey}>
+                                            <LocationPicker onLocationChange={setLocation} />
+                                        </APIProvider>
+                                    ) : (
+                                        <Alert variant="destructive">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertTitle>Configuration Missing</AlertTitle>
+                                            <AlertDescription>
+                                                Google Maps API key is not configured. Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable the map.
+                                            </AlertDescription>
+                                        </Alert>
                                     )}
-                                />
-                                {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="technician">Assign Technician</Label>
-                                <Controller
-                                    name="assignedTechnician"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <SelectTrigger id="technician">
-                                                <SelectValue placeholder="Select a technician" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {technicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message as string}</p>}
-                            </div>
-                            <Button type="submit" className="w-full">Create Task</Button>
-                        </form>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="contact-person">Contact Person</Label>
+                                        <Input id="contact-person" placeholder="e.g., John Doe" {...register('contactPerson')} />
+                                        {errors.contactPerson && <p className="text-sm text-red-500">{errors.contactPerson.message as string}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="contact-phone">Contact Phone</Label>
+                                        <Input id="contact-phone" placeholder="e.g., 123-456-7890" {...register('contactPhone')} />
+                                        {errors.contactPhone && <p className="text-sm text-red-500">{errors.contactPhone.message as string}</p>}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="date">Date</Label>
+                                    <Controller
+                                        name="date"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-full justify-start text-left font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
+                                    />
+                                    {errors.date && <p className="text-sm text-red-500">{errors.date.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="technician">Assign Technician</Label>
+                                    <Controller
+                                        name="assignedTechnician"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <SelectTrigger id="technician">
+                                                    <SelectValue placeholder="Select a technician" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {technicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                    {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message as string}</p>}
+                                </div>
+                                <Button type="submit" className="w-full">Create Task</Button>
+                            </form>
+                        ) : (
+                             <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Access Denied</AlertTitle>
+                                <AlertDescription>
+                                    You do not have permission to create new tasks.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                     </CardContent>
                 </Card>
             </div>

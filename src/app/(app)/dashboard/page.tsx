@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -13,12 +14,16 @@ import { Separator } from '@/components/ui/separator';
 import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 export default function DashboardPage() {
+  const { userRole } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [summaryData, setSummaryData] = useState({ total: 0, completed: 0, incomplete: 0, cancelled: 0 });
+
+  const canCreateTasks = userRole?.permissions?.tasks?.create ?? false;
 
   useEffect(() => {
     const q = query(collection(db, "tasks"));
@@ -63,12 +68,14 @@ export default function DashboardPage() {
                 <CardTitle>Pending Tasks</CardTitle>
                 <CardDescription>Tasks that need attention.</CardDescription>
             </div>
-            <Button asChild>
-                <Link href="/tasks">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add New Task
-                </Link>
-            </Button>
+            {canCreateTasks && (
+                <Button asChild>
+                    <Link href="/tasks">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add New Task
+                    </Link>
+                </Button>
+            )}
         </CardHeader>
         <CardContent>
             {pendingTasks.length > 0 ? (

@@ -25,13 +25,19 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { EditUserDialog } from '@/components/user-management/edit-user-dialog';
+import { useAuth } from '@/context/AuthContext';
 
 export default function UserManagementPage() {
+  const { userRole } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const { toast } = useToast();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const canCreate = userRole?.permissions.userManagement?.create ?? false;
+  const canEdit = userRole?.permissions.userManagement?.edit ?? false;
+  const canDelete = userRole?.permissions.userManagement?.delete ?? false;
 
   useEffect(() => {
     const unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -53,6 +59,10 @@ export default function UserManagementPage() {
   }, [users]);
   
   const handleApprove = async (userId: string) => {
+    if (!canEdit) {
+      toast({ title: "Permission Denied", description: "You cannot edit users.", variant: "destructive" });
+      return;
+    }
     const userDocRef = doc(db, 'users', userId);
     try {
         await updateDoc(userDocRef, { status: 'Active' });
@@ -63,6 +73,10 @@ export default function UserManagementPage() {
   };
   
   const handleDelete = async (userId: string) => {
+    if (!canDelete) {
+      toast({ title: "Permission Denied", description: "You cannot delete users.", variant: "destructive" });
+      return;
+    }
     try {
         await deleteDoc(doc(db, 'users', userId));
         toast({ title: "Success", description: "User has been deleted." });
@@ -72,11 +86,19 @@ export default function UserManagementPage() {
   };
 
   const handleEdit = (user: User) => {
+    if (!canEdit) {
+      toast({ title: "Permission Denied", description: "You cannot edit users.", variant: "destructive" });
+      return;
+    }
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
   
   const handleUpdateUser = async (userId: string, data: Partial<User>) => {
+    if (!canEdit) {
+      toast({ title: "Permission Denied", description: "You cannot edit users.", variant: "destructive" });
+      return;
+    }
     const userDocRef = doc(db, 'users', userId);
     try {
         await updateDoc(userDocRef, data);
@@ -114,12 +136,14 @@ export default function UserManagementPage() {
               <CardTitle>User Management</CardTitle>
               <CardDescription>Manage user accounts and permissions.</CardDescription>
           </div>
-          <Button asChild>
-              <Link href="/user-management/invite">
-                  <PlusCircle />
-                  Invite New User
-              </Link>
-          </Button>
+          {canCreate && (
+            <Button asChild>
+                <Link href="/user-management/invite">
+                    <PlusCircle />
+                    Invite New User
+                </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="border rounded-md">
@@ -153,22 +177,26 @@ export default function UserManagementPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleEdit(user)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit User
-                                            </DropdownMenuItem>
-                                            {user.status === 'Pending' && (
+                                            {canEdit && (
+                                              <DropdownMenuItem onClick={() => handleEdit(user)}>
+                                                  <Edit className="mr-2 h-4 w-4" />
+                                                  Edit User
+                                              </DropdownMenuItem>
+                                            )}
+                                            {user.status === 'Pending' && canEdit && (
                                                 <DropdownMenuItem onClick={() => handleApprove(user.id)}>
                                                     <UserCheck className="mr-2" />
                                                     Approve
                                                 </DropdownMenuItem>
                                             )}
-                                            <AlertDialogTrigger asChild>
-                                                  <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
-                                                       <Trash2 className="mr-2 h-4 w-4" />
-                                                       Delete
-                                                  </DropdownMenuItem>
-                                            </AlertDialogTrigger>
+                                            {canDelete && (
+                                              <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                              </AlertDialogTrigger>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                     <AlertDialogContent>

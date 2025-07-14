@@ -17,8 +17,10 @@ import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TaskManagementPage() {
+  const { userRole } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -26,6 +28,8 @@ export default function TaskManagementPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  const canDeleteTasks = userRole?.permissions?.taskManagement?.delete ?? false;
 
   useEffect(() => {
     const q = collection(db, "tasks");
@@ -62,6 +66,10 @@ export default function TaskManagementPage() {
   };
   
   const handleDeleteTask = async (taskId: string) => {
+    if (!canDeleteTasks) {
+        toast({ title: "Permission Denied", description: "You cannot delete tasks.", variant: "destructive" });
+        return;
+    }
     try {
         await deleteDoc(doc(db, "tasks", taskId));
         toast({ title: "Success", description: "Task deleted successfully." });
@@ -158,12 +166,14 @@ export default function TaskManagementPage() {
                                         <Eye className="mr-2 h-4 w-4" />
                                         View Details
                                     </DropdownMenuItem>
-                                    <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete Task
-                                        </DropdownMenuItem>
-                                    </AlertDialogTrigger>
+                                    {canDeleteTasks && (
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete Task
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <AlertDialogContent>

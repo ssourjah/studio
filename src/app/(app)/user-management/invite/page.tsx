@@ -17,6 +17,7 @@ import { setDoc, doc, collection, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
+import { useAuth } from "@/context/AuthContext";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -31,10 +32,13 @@ const userSchema = z.object({
 
 export default function InviteUserPage() {
   const { toast } = useToast();
+  const { userRole } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
   });
+  
+  const canCreateUsers = userRole?.permissions.userManagement?.create ?? false;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
@@ -45,6 +49,11 @@ export default function InviteUserPage() {
   }, []);
 
   const onRegisterSubmit = async (data: z.infer<typeof userSchema>) => {
+    if (!canCreateUsers) {
+        toast({ title: "Permission Denied", description: "You are not authorized to create users.", variant: "destructive" });
+        return;
+    }
+
     try {
       // Step 1: Create the user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -159,7 +168,7 @@ export default function InviteUserPage() {
                         </div>
                     </div>
                     
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || !canCreateUsers}>
                         <UserPlus className="mr-2 h-4 w-4" />
                         {isSubmitting ? 'Creating...' : 'Create User Account'}
                     </Button>
@@ -203,7 +212,7 @@ export default function InviteUserPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <Button onClick={handleSubmit(onInviteSubmit)}>
+                <Button onClick={handleSubmit(onInviteSubmit)} disabled={!canCreateUsers}>
                     <Mail className="mr-2 h-4 w-4" />
                     Send Invitation
                 </Button>

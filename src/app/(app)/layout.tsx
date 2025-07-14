@@ -20,6 +20,7 @@ import {
   Shield,
   ChevronDown,
   FileSpreadsheet,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -33,15 +34,18 @@ const userMenuItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-const adminMenuItems = [
-  { href: '/administrator', label: 'Administrator', icon: Shield },
-  { href: '/task-management', label: 'Task Management', icon: ListTodo },
-  { href: '/user-management', label: 'User Management', icon: Users },
-  { href: '/reports', label: 'Task Report', icon: FileSpreadsheet },
-];
+const managementMenuItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
+    { href: '/tasks', label: 'Create Task', icon: ListTodo, permission: 'tasks' },
+    { href: '/task-management', label: 'Task Management', icon: ListTodo, permission: 'taskManagement' },
+    { href: '/reports', label: 'Task Report', icon: FileSpreadsheet, permission: 'reports' },
+    { href: '/user-management', label: 'User Management', icon: Users, permission: 'userManagement' },
+    { href: '/administrator', label: 'Administrator', icon: Shield, permission: 'administrator' },
+] as const;
+
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, loading, logout } = useAuth();
+  const { currentUser, userRole, loading, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -114,14 +118,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Management</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {adminMenuItems.map((item) => (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link href={item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+              {managementMenuItems.map((item) => {
+                const canRead = userRole?.permissions[item.permission]?.read;
+                if (canRead) {
+                    return (
+                        <DropdownMenuItem key={item.href} asChild>
+                            <Link href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.label}
+                            </Link>
+                        </DropdownMenuItem>
+                    );
+                }
+                return null;
+              })}
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <LifeBuoy className="mr-2 h-4 w-4" />

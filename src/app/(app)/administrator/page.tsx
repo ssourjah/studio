@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase';
 import { collection, setDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/context/AuthContext';
 
 const services: { id: PermissionLevel; name: string; description: string }[] = [
     { id: 'dashboard', name: 'Dashboard', description: 'View summary cards and charts.' },
@@ -42,6 +43,7 @@ const initialPermissions = services.reduce((acc, service) => {
 
 
 export default function AdministratorPage() {
+  const { userRole } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleName, setRoleName] = useState('');
@@ -49,6 +51,10 @@ export default function AdministratorPage() {
   const { toast } = useToast();
 
   const isEditing = !!selectedRole;
+
+  const canCreate = userRole?.permissions.administrator?.create ?? false;
+  const canEdit = userRole?.permissions.administrator?.edit ?? false;
+  const canDelete = userRole?.permissions.administrator?.delete ?? false;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
@@ -83,6 +89,11 @@ export default function AdministratorPage() {
   };
 
   const handleSaveRole = async () => {
+    const hasPermission = isEditing ? canEdit : canCreate;
+    if (!hasPermission) {
+        toast({ title: "Permission Denied", description: "You cannot save roles.", variant: "destructive" });
+        return;
+    }
     if (roleName.trim()) {
       try {
         const roleId = selectedRole ? selectedRole.id : doc(collection(db, 'roles')).id;
@@ -104,6 +115,10 @@ export default function AdministratorPage() {
   };
   
   const handleDeleteRole = async (id: string) => {
+    if (!canDelete) {
+        toast({ title: "Permission Denied", description: "You cannot delete roles.", variant: "destructive" });
+        return;
+    }
     try {
         await deleteDoc(doc(db, "roles", id));
         toast({ title: "Success", description: "Role deleted successfully." });
@@ -189,7 +204,7 @@ export default function AdministratorPage() {
                 </div>
             </div>
 
-            <Button onClick={handleSaveRole} disabled={!roleName}>
+            <Button onClick={handleSaveRole} disabled={!roleName || (isEditing ? !canEdit : !canCreate)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               {isEditing ? 'Save Changes' : 'Add Role'}
             </Button>
@@ -215,12 +230,12 @@ export default function AdministratorPage() {
                             <TableRow key={role.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleSelectRoleForEdit(role)}>
                                 <TableCell className="font-medium">{role.name}</TableCell>
                                 <TableCell className="text-right">
-                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleSelectRoleForEdit(role); }}>
+                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleSelectRoleForEdit(role); }} disabled={!canEdit}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
                                   <AlertDialog onOpenChange={(open) => !open && clearSelection()}>
                                     <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={(e) => e.stopPropagation()}>
+                                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={(e) => e.stopPropagation()} disabled={!canDelete}>
                                           <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </AlertDialogTrigger>
