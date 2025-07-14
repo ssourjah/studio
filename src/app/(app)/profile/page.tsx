@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSettings } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
-  const { avatarUrl, setAvatarUrl } = useSettings();
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -31,10 +33,25 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSavePicture = () => {
-    if (previewUrl) {
-      setAvatarUrl(previewUrl);
-      setPreviewUrl(null);
+  const handleSavePicture = async () => {
+    if (previewUrl && currentUser) {
+      const userDocRef = doc(db, 'users', currentUser.id);
+      try {
+        await updateDoc(userDocRef, { avatarUrl: previewUrl });
+        const updatedUser = { ...currentUser, avatarUrl: previewUrl };
+        setCurrentUser(updatedUser);
+        setPreviewUrl(null);
+        toast({
+          title: "Avatar Updated",
+          description: "Your new profile picture has been saved.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save your new picture.",
+          variant: "destructive",
+        });
+      }
     }
   };
   
@@ -66,7 +83,7 @@ export default function ProfilePage() {
              <Card>
                  <CardContent className="pt-6 flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24 mb-4 cursor-pointer" onClick={handleAvatarClick}>
-                        <AvatarImage src={previewUrl || avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
+                        <AvatarImage src={previewUrl || currentUser.avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
                         <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">{currentUser.name}</h2>

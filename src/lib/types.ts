@@ -33,6 +33,7 @@ export type User = {
     designation: string;
     accessLevel: AccessLevel;
     status: UserStatus;
+    avatarUrl?: string;
 };
 
 export type Designation = {

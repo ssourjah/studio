@@ -9,8 +9,6 @@ interface SettingsContextType {
     setCompanyName: (name: string) => Promise<void>;
     logoUrl: string | null;
     setLogoUrl: (url: string | null) => Promise<void>;
-    avatarUrl: string | null;
-    setAvatarUrl: (url: string | null) => void;
     disableAdminLogin: boolean;
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
     loading: boolean;
@@ -24,7 +22,6 @@ const settingsDocRef = doc(db, 'settings', 'company');
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
     const [logoUrl, setLogoUrlState] = useState<string | null>(null);
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -70,8 +67,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setCompanyName,
         logoUrl,
         setLogoUrl,
-        avatarUrl,
-        setAvatarUrl,
         disableAdminLogin,
         setDisableAdminLogin,
         loading

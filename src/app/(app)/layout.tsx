@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useSettings } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -42,7 +41,6 @@ const adminMenuItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { avatarUrl } = useSettings();
   const { currentUser, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -90,7 +88,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button variant="ghost" className="flex items-center gap-2" suppressHydrationWarning>
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={avatarUrl || "https://placehold.co/40x40.png"}
+                    src={currentUser.avatarUrl || "https://placehold.co/40x40.png"}
                     alt={currentUser.name}
                     data-ai-hint="profile picture"
                   />

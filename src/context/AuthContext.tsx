@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   logout: () => Promise<void>;
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     currentUser,
+    setCurrentUser,
     firebaseUser,
     loading,
     logout,
