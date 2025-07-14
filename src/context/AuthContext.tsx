@@ -58,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUserRole(null);
             setLoading(false);
           }
+        }, (error) => {
+            console.error("Error in user snapshot listener:", error);
+            setCurrentUser(null);
+            setUserRole(null);
+            setLoading(false);
         });
         return () => unsubscribeUser();
       } else {

@@ -49,6 +49,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
+  console.log(loading, currentUser)
+
   useEffect(() => {
     setIsClient(true);
   }, []);
