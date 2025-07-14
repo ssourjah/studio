@@ -82,6 +82,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return name.substring(0, 2).toUpperCase();
   }
 
+  const canSeeManagementSection = managementMenuItems.some(item => 
+    userRole?.permissions[item.permission]?.read
+  );
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
@@ -115,23 +119,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Management</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {managementMenuItems.map((item) => {
-                const canRead = userRole?.permissions[item.permission]?.read;
-                if (canRead) {
-                    return (
-                        <DropdownMenuItem key={item.href} asChild>
-                            <Link href={item.href}>
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
-                            </Link>
-                        </DropdownMenuItem>
-                    );
-                }
-                return null;
-              })}
+              
+              {canSeeManagementSection && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {managementMenuItems.map((item) => {
+                    const canRead = userRole?.permissions[item.permission]?.read;
+                    if (canRead) {
+                        return (
+                            <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href}>
+                                    <item.icon className="mr-2 h-4 w-4" />
+                                    {item.label}
+                                </Link>
+                            </DropdownMenuItem>
+                        );
+                    }
+                    return null;
+                  })}
+                </>
+              )}
+
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <LifeBuoy className="mr-2 h-4 w-4" />
