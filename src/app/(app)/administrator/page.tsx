@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
-import { collection, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, setDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -42,7 +43,8 @@ export default function AdministratorPage() {
   const handleAddDesignation = async () => {
     if (newDesignationName.trim() && selectedAccessLevel) {
       try {
-        await addDoc(collection(db, 'designations'), {
+        const newDesignationRef = doc(collection(db, 'designations'));
+        await setDoc(newDesignationRef, {
           name: newDesignationName.trim(),
           accessLevel: selectedAccessLevel
         });
@@ -50,6 +52,7 @@ export default function AdministratorPage() {
         setNewDesignationName('');
         setSelectedAccessLevel('');
       } catch (error) {
+        console.error("Error adding designation: ", error);
         toast({ title: "Error", description: "Could not add designation.", variant: "destructive" });
       }
     }
@@ -62,7 +65,7 @@ export default function AdministratorPage() {
     } catch (error) {
         toast({ title: "Error", description: "Could not delete designation.", variant: "destructive" });
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -135,7 +138,7 @@ export default function AdministratorPage() {
                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                           This action cannot be undone. This will permanently delete the <strong>{designation.name}</strong> designation.
-                                        </AlertDialogDescription>
+                                        </Description>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
