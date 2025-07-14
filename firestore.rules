@@ -1,39 +1,32 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
+    
+    // Helper Functions
     function isAuth() {
       return request.auth != null;
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getRole(roleId) {
-      return get(/databases/$(database)/documents/roles/$(roleId)).data;
+    function getRoleData(roleId) {
+        return get(/databases/$(database)/documents/roles/$(roleId)).data;
     }
-
-    function hasPermission(serviceID, permission) {
-      // Check if the user is authenticated and has a roleId.
-      if (!isAuth() || !('roleId' in getUserData())) {
-        return false;
-      }
-      
-      // Get the user's role data from the 'roles' collection.
-      // The hasPermission function now correctly checks the user's role for specific permissions.
-      return getRole(getUserData().roleId).permissions[serviceID][permission] == true;
+    
+    function hasPermission(serviceID, permissionLevel) {
+      // This function returns true if the authenticated user has the specified permission, false otherwise.
+      // It checks for the existence of roleId, the role document, the permissions map, and the specific permission.
+      let userData = getUserData();
+      return 'roleId' in userData &&
+             exists(/databases/$(database)/documents/roles/$(userData.roleId)) &&
+             'permissions' in getRoleData(userData.roleId) &&
+             getRoleData(userData.roleId).permissions.get(serviceID, {}).get(permissionLevel, false) == true;
     }
-
-    // Public read for company settings
-    match /settings/company {
-      allow read: if true;
-      allow write: if isAuth() && hasPermission('settings', 'edit');
-    }
-
+    
+    // Rules
     match /users/{userId} {
       allow read: if isAuth() && (request.auth.uid == userId || hasPermission('userManagement', 'read'));
       allow create: if isAuth() && hasPermission('userManagement', 'create');
@@ -53,6 +46,11 @@ service cloud.firestore {
       allow create: if isAuth() && hasPermission('administrator', 'create');
       allow update: if isAuth() && hasPermission('administrator', 'edit');
       allow delete: if isAuth() && hasPermission('administrator', 'delete');
+    }
+
+    match /settings/company {
+      allow read: if true;
+      allow write: if isAuth() && hasPermission('settings', 'edit');
     }
   }
 }
