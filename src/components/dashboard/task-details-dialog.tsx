@@ -78,7 +78,7 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
           </div>
            <Separator />
         </div>
-        <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
            <div className="flex items-center gap-2">
                 <Badge variant="secondary" className={cn("text-secondary-foreground", task.status === 'Incomplete' && 'bg-orange-500/80')}>
                     {task.status}
