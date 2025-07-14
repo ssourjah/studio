@@ -7,9 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSettings } from '@/context/SettingsContext';
+import { useAuth } from '@/context/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   const { avatarUrl, setAvatarUrl } = useSettings();
+  const { currentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -34,6 +37,28 @@ export default function ProfilePage() {
       setPreviewUrl(null);
     }
   };
+  
+  const getInitials = (name: string) => {
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+  
+  if (!currentUser) {
+    return (
+        <div className="grid gap-6 md:grid-cols-3">
+            <div className="md:col-span-1">
+                <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+            </div>
+            <div className="md:col-span-2">
+                <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+                 <Card className="mt-6"><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
@@ -42,10 +67,10 @@ export default function ProfilePage() {
                  <CardContent className="pt-6 flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24 mb-4 cursor-pointer" onClick={handleAvatarClick}>
                         <AvatarImage src={previewUrl || avatarUrl || "https://placehold.co/100x100.png"} data-ai-hint="profile picture" />
-                        <AvatarFallback>AD</AvatarFallback>
+                        <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
                     </Avatar>
-                    <h2 className="text-xl font-bold">Admin User</h2>
-                    <p className="text-muted-foreground">System Administrator</p>
+                    <h2 className="text-xl font-bold">{currentUser.name}</h2>
+                    <p className="text-muted-foreground">{currentUser.designation || 'N/A'}</p>
                     <div className="flex flex-col gap-2 mt-4 w-full px-6">
                         <Button variant="outline" onClick={handleAvatarClick} suppressHydrationWarning>
                             Change Picture
@@ -74,41 +99,41 @@ export default function ProfilePage() {
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="full-name">Full Name</Label>
-                            <Input id="full-name" defaultValue="Admin User" />
+                            <Input id="full-name" defaultValue={currentUser.name} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="username">Username</Label>
-                            <Input id="username" defaultValue="admin" />
+                            <Input id="username" defaultValue={currentUser.username} />
                         </div>
                     </div>
                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" defaultValue="admin@taskmaster.pro" disabled />
+                            <Input id="email" defaultValue={currentUser.email} disabled />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" defaultValue="123-456-7890" />
+                            <Input id="phone" defaultValue={currentUser.phone} />
                         </div>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="employee-id">Employee ID</Label>
-                            <Input id="employee-id" defaultValue="EMP001" disabled />
+                            <Input id="employee-id" defaultValue={currentUser.employeeId} disabled />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="designation">Designation</Label>
-                            <Input id="designation" defaultValue="System Administrator" />
+                            <Input id="designation" defaultValue={currentUser.designation} />
                         </div>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="department">Department</Label>
-                            <Input id="department" defaultValue="IT" />
+                            <Input id="department" defaultValue={currentUser.department} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="access-level">Access Level</Label>
-                            <Input id="access-level" defaultValue="Admin" disabled />
+                            <Input id="access-level" defaultValue={currentUser.accessLevel} disabled />
                         </div>
                     </div>
                     <Button suppressHydrationWarning>Save Changes</Button>
