@@ -1,41 +1,34 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isAuth() {
       return request.auth != null;
     }
 
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
+    // Helper function to check permissions by looking up the user's role
+    // and checking the nested permissions map.
+    function hasPermission(service, permissionLevel) {
+      // Get the user's document from the 'users' collection.
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // If the user has a roleId, get the corresponding role document.
+      if (userDoc.roleId != null) {
+        let roleDoc = get(/databases/$(database)/documents/roles/$(userDoc.roleId)).data;
+        // Check if the permission exists and is set to true.
+        // This is the correct way to access nested map properties.
+        return roleDoc.permissions[service][permissionLevel] == true;
+      }
+      return false;
     }
 
-    function getRoleData(roleId) {
-      return get(/databases/$(database)/documents/roles/$(roleId)).data;
-    }
-
-    function hasPermission(service, permission) {
-      let userData = getUserData(request.auth.uid);
-      let roleData = getRoleData(userData.roleId);
-      // Use .get() instead of bracket notation for dynamic keys
-      return roleData.permissions.get(service, {}).get(permission, false) == true;
-    }
-
-    // Collection: users
     match /users/{userId} {
-      // Allow user to read/update own data, or if they have userManagement permissions
       allow read: if isAuth() && (request.auth.uid == userId || hasPermission('userManagement', 'read'));
+      allow create: if isAuth() && hasPermission('userManagement', 'create');
       allow update: if isAuth() && (request.auth.uid == userId || hasPermission('userManagement', 'edit'));
-      
-      // Allow create/delete only with userManagement permissions
-      allow create: if isAuth() && (hasPermission('userManagement', 'create') || request.auth.uid == userId); // Allow self-registration
       allow delete: if isAuth() && hasPermission('userManagement', 'delete');
     }
 
-    // Collection: tasks
     match /tasks/{taskId} {
       allow read: if isAuth() && (hasPermission('tasks', 'read') || hasPermission('taskManagement', 'read'));
       allow create: if isAuth() && hasPermission('tasks', 'create');
@@ -43,7 +36,6 @@ service cloud.firestore {
       allow delete: if isAuth() && hasPermission('taskManagement', 'delete');
     }
 
-    // Collection: roles
     match /roles/{roleId} {
       allow read: if isAuth() && hasPermission('administrator', 'read');
       allow create: if isAuth() && hasPermission('administrator', 'create');
@@ -51,10 +43,9 @@ service cloud.firestore {
       allow delete: if isAuth() && hasPermission('administrator', 'delete');
     }
 
-    // Collection: settings
     match /settings/company {
       allow read: if isAuth();
-      allow write: if isAuth() && hasPermission('settings', 'edit');
+      allow update: if isAuth() && hasPermission('settings', 'edit');
     }
   }
 }
