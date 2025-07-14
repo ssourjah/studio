@@ -1,8 +1,10 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // Helper functions
     function isAuth() {
       return request.auth != null;
     }
@@ -11,23 +13,25 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getRoleData(roleId) {
+    function getRole(roleId) {
       return get(/databases/$(database)/documents/roles/$(roleId)).data;
     }
 
-    // Check if the authenticated user has a specific permission level for a given service.
-    // serviceID: The name of the service/page (e.g., 'tasks', 'userManagement').
-    // level: The permission level to check (e.g., 'read', 'create', 'edit', 'delete').
-    function hasPermission(serviceID, level) {
-      let userData = getUserData();
-      if (!('roleId' in userData)) {
+    function hasPermission(serviceID, permission) {
+      // Check if the user is authenticated and has a roleId.
+      if (!isAuth() || !('roleId' in getUserData())) {
         return false;
       }
-      let roleData = getRoleData(userData.roleId);
-      if (!('permissions' in roleData) || !(serviceID in roleData.permissions) || !(level in roleData.permissions[serviceID])) {
-        return false;
-      }
-      return roleData.permissions[serviceID][level] == true;
+      
+      // Get the user's role data from the 'roles' collection.
+      // The hasPermission function now correctly checks the user's role for specific permissions.
+      return getRole(getUserData().roleId).permissions[serviceID][permission] == true;
+    }
+
+    // Public read for company settings
+    match /settings/company {
+      allow read: if true;
+      allow write: if isAuth() && hasPermission('settings', 'edit');
     }
 
     match /users/{userId} {
@@ -45,15 +49,10 @@ service cloud.firestore {
     }
 
     match /roles/{roleId} {
-        allow read: if isAuth() && hasPermission('administrator', 'read');
-        allow create: if isAuth() && hasPermission('administrator', 'create');
-        allow update: if isAuth() && hasPermission('administrator', 'edit');
-        allow delete: if isAuth() && hasPermission('administrator', 'delete');
-    }
-
-    match /settings/company {
-      allow read: if true; // Publicly readable for login page
-      allow write: if isAuth() && hasPermission('settings', 'edit');
+      allow read: if isAuth() && hasPermission('administrator', 'read');
+      allow create: if isAuth() && hasPermission('administrator', 'create');
+      allow update: if isAuth() && hasPermission('administrator', 'edit');
+      allow delete: if isAuth() && hasPermission('administrator', 'delete');
     }
   }
 }
