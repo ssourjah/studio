@@ -13,7 +13,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
-  const { currentUser, setCurrentUser } = useAuth();
+  const { currentUser, setCurrentUser, userRole } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
@@ -87,7 +87,7 @@ export default function ProfilePage() {
                         <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl font-bold">{currentUser.name}</h2>
-                    <p className="text-muted-foreground">{currentUser.roleId || 'N/A'}</p>
+                    <p className="text-muted-foreground">{userRole?.name || 'N/A'}</p>
                     <div className="flex flex-col gap-2 mt-4 w-full px-6">
                         <Button variant="outline" onClick={handleAvatarClick} suppressHydrationWarning>
                             Change Picture
@@ -146,7 +146,7 @@ export default function ProfilePage() {
                     <div className="grid md:grid-cols-2 gap-4">
                        <div className="space-y-2">
                             <Label htmlFor="role">Role</Label>
-                            <Input id="role" defaultValue={currentUser.roleId} disabled />
+                            <Input id="role" value={userRole?.name || 'N/A'} disabled />
                         </div>
                     </div>
                     <Button suppressHydrationWarning>Save Changes</Button>
