@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash2, ShieldQuestion } from "lucide-react";
+import { PlusCircle, Trash2, ShieldQuestion, Edit, XCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Role, Permission, PermissionLevel } from "@/lib/types";
 import {
@@ -36,16 +36,19 @@ const services: { id: PermissionLevel; name: string; description: string }[] = [
 ];
 
 const initialPermissions = services.reduce((acc, service) => {
-    acc[service.id] = { read: false, write: false, admin: false };
+    acc[service.id] = { read: false, create: false, edit: false, admin: false };
     return acc;
 }, {} as Record<PermissionLevel, Permission>);
 
 
 export default function AdministratorPage() {
   const [roles, setRoles] = useState<Role[]>([]);
-  const [newRoleName, setNewRoleName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [roleName, setRoleName] = useState('');
   const [permissions, setPermissions] = useState<Record<PermissionLevel, Permission>>(initialPermissions);
   const { toast } = useToast();
+
+  const isEditing = !!selectedRole;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
@@ -54,6 +57,20 @@ export default function AdministratorPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleSelectRoleForEdit = (role: Role) => {
+    setSelectedRole(role);
+    setRoleName(role.name);
+    // Ensure all permission levels are present, even if not in saved data
+    const fullPermissions = { ...initialPermissions, ...role.permissions };
+    setPermissions(fullPermissions);
+  };
+
+  const clearSelection = () => {
+    setSelectedRole(null);
+    setRoleName('');
+    setPermissions(initialPermissions);
+  };
 
   const handlePermissionChange = (service: PermissionLevel, level: keyof Permission) => {
     setPermissions(prev => ({
@@ -65,20 +82,23 @@ export default function AdministratorPage() {
     }));
   };
 
-  const handleAddRole = async () => {
-    if (newRoleName.trim()) {
+  const handleSaveRole = async () => {
+    if (roleName.trim()) {
       try {
-        const newRoleRef = doc(collection(db, 'roles'));
-        await setDoc(newRoleRef, {
-          name: newRoleName.trim(),
+        const roleId = selectedRole ? selectedRole.id : doc(collection(db, 'roles')).id;
+        const roleRef = doc(db, 'roles', roleId);
+        
+        await setDoc(roleRef, {
+          name: roleName.trim(),
           permissions: permissions
         });
-        toast({ title: "Success", description: "Role added successfully." });
-        setNewRoleName('');
-        setPermissions(initialPermissions);
+
+        toast({ title: "Success", description: `Role ${isEditing ? 'updated' : 'added'} successfully.` });
+        clearSelection();
+
       } catch (error) {
-        console.error("Error adding role: ", error);
-        toast({ title: "Error", description: "Could not add role.", variant: "destructive" });
+        console.error("Error saving role: ", error);
+        toast({ title: "Error", description: `Could not ${isEditing ? 'update' : 'add'} role.`, variant: "destructive" });
       }
     }
   };
@@ -87,6 +107,9 @@ export default function AdministratorPage() {
     try {
         await deleteDoc(doc(db, "roles", id));
         toast({ title: "Success", description: "Role deleted successfully." });
+        if (selectedRole?.id === id) {
+            clearSelection();
+        }
     } catch (error) {
         toast({ title: "Error", description: "Could not delete role.", variant: "destructive" });
     }
@@ -96,8 +119,18 @@ export default function AdministratorPage() {
     <div className="space-y-6" suppressHydrationWarning>
       <Card>
         <CardHeader>
-          <CardTitle>Create New Role</CardTitle>
-          <CardDescription>Define a new user role and set its permissions.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{isEditing ? `Editing Role: ${selectedRole.name}` : 'Create New Role'}</CardTitle>
+              <CardDescription>{isEditing ? 'Modify the permissions for this role.' : 'Define a new user role and set its permissions.'}</CardDescription>
+            </div>
+             {isEditing && (
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancel Edit
+                </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -105,8 +138,8 @@ export default function AdministratorPage() {
                 <Input 
                     id="role-name" 
                     placeholder="e.g., Field Manager"
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
+                    value={roleName}
+                    onChange={(e) => setRoleName(e.target.value)}
                 />
             </div>
             
@@ -119,7 +152,8 @@ export default function AdministratorPage() {
                                 <TableRow>
                                     <TableHead>Service</TableHead>
                                     <TableHead className="text-center">Read</TableHead>
-                                    <TableHead className="text-center">Write</TableHead>
+                                    <TableHead className="text-center">Create</TableHead>
+                                    <TableHead className="text-center">Edit</TableHead>
                                     <TableHead className="text-center">Admin</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -139,10 +173,10 @@ export default function AdministratorPage() {
                                                 </Tooltip>
                                             </div>
                                         </TableCell>
-                                        {(['read', 'write', 'admin'] as const).map(level => (
+                                        {(['read', 'create', 'edit', 'admin'] as const).map(level => (
                                             <TableCell key={level} className="text-center">
                                                 <Checkbox
-                                                    checked={permissions[service.id][level]}
+                                                    checked={permissions[service.id]?.[level] || false}
                                                     onCheckedChange={() => handlePermissionChange(service.id, level)}
                                                 />
                                             </TableCell>
@@ -155,9 +189,9 @@ export default function AdministratorPage() {
                 </div>
             </div>
 
-            <Button onClick={handleAddRole} disabled={!newRoleName}>
+            <Button onClick={handleSaveRole} disabled={!roleName}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add Role
+              {isEditing ? 'Save Changes' : 'Add Role'}
             </Button>
         </CardContent>
       </Card>
@@ -165,7 +199,7 @@ export default function AdministratorPage() {
       <Card>
         <CardHeader>
             <CardTitle>Existing Roles</CardTitle>
-            <CardDescription>A list of all roles. Users with these roles will gain the permissions you've set.</CardDescription>
+            <CardDescription>A list of all roles. Click a role to edit it.</CardDescription>
         </CardHeader>
         <CardContent>
              <div className="border rounded-md">
@@ -178,12 +212,15 @@ export default function AdministratorPage() {
                     </TableHeader>
                     <TableBody>
                         {roles.map((role) => (
-                            <TableRow key={role.id}>
+                            <TableRow key={role.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleSelectRoleForEdit(role)}>
                                 <TableCell className="font-medium">{role.name}</TableCell>
                                 <TableCell className="text-right">
-                                  <AlertDialog>
+                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleSelectRoleForEdit(role); }}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog onOpenChange={(open) => !open && clearSelection()}>
                                     <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={(e) => e.stopPropagation()}>
                                           <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </AlertDialogTrigger>

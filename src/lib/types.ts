@@ -39,7 +39,8 @@ export type User = {
 
 export type Permission = {
   read: boolean;
-  write: boolean;
+  create: boolean;
+  edit: boolean;
   admin: boolean;
 }
 
