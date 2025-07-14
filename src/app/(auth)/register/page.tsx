@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 const registerSchema = z.object({
@@ -23,13 +23,15 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   employeeId: z.string().optional(),
   department: z.string().optional(),
-  designation: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleId = searchParams.get('roleId');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema)
@@ -51,14 +53,13 @@ export default function RegisterPage() {
         phone: data.phone || '',
         employeeId: data.employeeId || '',
         department: data.department || '',
-        designation: data.designation || '',
-        accessLevel: 'Technician', // Default access level for self-registration
-        status: 'Pending', // Requires admin approval
+        roleId: roleId || null, // Use roleId from invite link or null
+        status: 'Active', // Users registering via link are auto-activated
       });
       
       toast({
         title: "Registration Successful",
-        description: "Your account request has been sent for approval.",
+        description: "Your account has been created successfully.",
       });
       router.push("/login");
 
@@ -90,7 +91,10 @@ export default function RegisterPage() {
           <CardHeader>
             <CardTitle className="text-2xl">Register New User</CardTitle>
             <CardDescription>
-              Fill in the form to request a new user account. Your request will be sent for admin approval.
+              {roleId 
+                ? "You've been invited! Please complete the form to create your account."
+                : "Fill in the form to request a new user account. Your request will be sent for admin approval."
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -130,7 +134,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                    <div className="grid gap-2">
                       <Label htmlFor="designation">Designation</Label>
-                      <Input id="designation" placeholder="Technician" {...register("designation")} />
+                      <Input id="designation" placeholder="Technician" disabled />
                   </div>
                   <div className="grid gap-2">
                       <Label htmlFor="password">Password</Label>
@@ -141,7 +145,7 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Requesting...' : 'Request Account'}
+              {isSubmitting ? 'Registering...' : 'Create My Account'}
             </Button>
              <div className="text-center text-sm">
               Already have an account?{" "}

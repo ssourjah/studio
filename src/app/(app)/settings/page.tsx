@@ -15,6 +15,7 @@ export default function SettingsPage() {
     companyName, setCompanyName, 
     logoUrl, setLogoUrl, 
     disableAdminLogin, setDisableAdminLogin, 
+    smtpSettings, setSmtpSettings,
     loading 
   } = useSettings();
   const { toast } = useToast();
@@ -22,6 +23,13 @@ export default function SettingsPage() {
   const [localCompanyName, setLocalCompanyName] = useState('');
   const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null);
   const [localDisableAdminLogin, setLocalDisableAdminLogin] = useState(false);
+  const [localSmtpSettings, setLocalSmtpSettings] = useState({
+    smtpHost: '',
+    smtpPort: '',
+    smtpUser: '',
+    smtpPassword: '',
+  });
+
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -29,8 +37,9 @@ export default function SettingsPage() {
       setLocalCompanyName(companyName);
       setPreviewLogoUrl(logoUrl);
       setLocalDisableAdminLogin(disableAdminLogin);
+      setLocalSmtpSettings(smtpSettings);
     }
-  }, [companyName, logoUrl, disableAdminLogin, loading]);
+  }, [companyName, logoUrl, disableAdminLogin, smtpSettings, loading]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,7 +52,7 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveChanges = async () => {
+  const handleCompanyInfoSave = async () => {
     setIsSaving(true);
     try {
       await setCompanyName(localCompanyName);
@@ -61,6 +70,25 @@ export default function SettingsPage() {
       console.error("Failed to save settings:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSmtpSave = async () => {
+    setIsSaving(true);
+    try {
+        await setSmtpSettings(localSmtpSettings);
+        toast({
+            title: "SMTP Settings Saved",
+            description: "Your email server settings have been updated.",
+        });
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: "Failed to save SMTP settings.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -141,7 +169,7 @@ export default function SettingsPage() {
                   </div>
                 )}
             </div>
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
+            <Button onClick={handleCompanyInfoSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Company Info'}
             </Button>
         </CardContent>
@@ -156,24 +184,23 @@ export default function SettingsPage() {
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="smtp-host">SMTP Host</Label>
-                    <Input id="smtp-host" placeholder="smtp.example.com" />
+                    <Input id="smtp-host" placeholder="smtp.example.com" value={localSmtpSettings.smtpHost} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpHost: e.target.value}))} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="smtp-port">SMTP Port</Label>
-                    <Input id="smtp-port" placeholder="587" />
+                    <Input id="smtp-port" placeholder="587" value={localSmtpSettings.smtpPort} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPort: e.target.value}))} />
                 </div>
             </div>
              <div className="space-y-2">
                 <Label htmlFor="smtp-user">Username</Label>
-                <Input id="smtp-user" placeholder="user@example.com" />
+                <Input id="smtp-user" placeholder="user@example.com" value={localSmtpSettings.smtpUser} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpUser: e.target.value}))} />
             </div>
              <div className="space-y-2">
                 <Label htmlFor="smtp-password">Password</Label>
-                <Input id="smtp-password" type="password" />
+                <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
             </div>
             <div className="flex gap-2">
-                <Button>Save SMTP Settings</Button>
-                <Button variant="outline">Test Connection</Button>
+                <Button onClick={handleSmtpSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save SMTP Settings'}</Button>
             </div>
         </CardContent>
       </Card>
