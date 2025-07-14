@@ -15,8 +15,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, collection, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import type { Designation } from "@/lib/types";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -32,9 +34,18 @@ const userSchema = z.object({
 
 export default function InviteUserPage() {
   const { toast } = useToast();
+  const [designations, setDesignations] = useState<Designation[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
   });
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "designations"), (snapshot) => {
+      const designationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Designation));
+      setDesignations(designationsData);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const onRegisterSubmit = async (data: z.infer<typeof userSchema>) => {
     try {
@@ -129,7 +140,20 @@ export default function InviteUserPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="designation">Designation</Label>
-                            <Input id="designation" placeholder="e.g., Technician" {...register("designation")} />
+                            <Controller
+                                name="designation"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <SelectTrigger id="designation">
+                                            <SelectValue placeholder="Select a designation" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {designations.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="access-level-register">Access Level</Label>
@@ -208,3 +232,5 @@ export default function InviteUserPage() {
     </div>
   );
 }
+
+    
