@@ -27,6 +27,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const fetchSettings = async () => {
+            setLoading(true);
             try {
                 const docSnap = await getDoc(settingsDocRef);
                 if (docSnap.exists()) {
@@ -36,6 +37,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 }
             } catch (error) {
                 console.error("Error fetching company settings:", error);
+                // Defaults are already set, so we can just log the error
             } finally {
                 setLoading(false);
             }
