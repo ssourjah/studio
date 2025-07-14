@@ -54,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, loading, router]);
   
-  if (loading || !currentUser) {
+  if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
@@ -72,6 +72,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     );
+  }
+
+  // If loading is finished and there's no user, the useEffect above will redirect.
+  // We can return null here to prevent rendering the layout for a split second before redirection.
+  if (!currentUser) {
+    return null;
   }
 
   const getInitials = (name: string) => {
