@@ -26,6 +26,7 @@ import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/fire
 import { useToast } from '@/hooks/use-toast';
 import { EditUserDialog } from '@/components/user-management/edit-user-dialog';
 import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function UserManagementPage() {
   const { userRole } = useAuth();
@@ -128,6 +129,14 @@ export default function UserManagementPage() {
     return role ? role.name : 'Unknown Role';
   }
 
+  const getInitials = (name: string) => {
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
   return (
     <>
       <Card>
@@ -150,6 +159,7 @@ export default function UserManagementPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
+                          <TableHead className="w-12"></TableHead>
                           <TableHead>Full Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
@@ -160,6 +170,12 @@ export default function UserManagementPage() {
                   <TableBody>
                       {sortedUsers.map(user => (
                           <TableRow key={user.id}>
+                              <TableCell>
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={user.avatarUrl || "https://placehold.co/40x40.png"} alt={user.name} data-ai-hint="profile picture" />
+                                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                </Avatar>
+                              </TableCell>
                               <TableCell className="font-medium">{user.name}</TableCell>
                               <TableCell>{user.email}</TableCell>
                               <TableCell>{getRoleName(user.roleId)}</TableCell>
