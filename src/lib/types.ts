@@ -1,3 +1,4 @@
+
 export type TaskStatus = 'Incomplete' | 'Completed' | 'Cancelled';
 
 export type Task = {
@@ -17,7 +18,7 @@ export type Task = {
   updatedBy: string;
 };
 
-export type UserStatus = 'Active' | 'Pending';
+export type UserStatus = 'Active' | 'Pending' | 'Suspended';
 export type AccessLevel = 'Admin' | 'Support' | 'Technician' | 'Manager';
 
 
