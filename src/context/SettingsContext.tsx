@@ -11,6 +11,8 @@ interface SettingsContextType {
     setLogoUrl: (url: string | null) => Promise<void>;
     avatarUrl: string | null;
     setAvatarUrl: (url: string | null) => void;
+    disableAdminLogin: boolean;
+    setDisableAdminLogin: (disabled: boolean) => Promise<void>;
     loading: boolean;
 }
 
@@ -23,6 +25,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
     const [logoUrl, setLogoUrlState] = useState<string | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -34,6 +37,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                     const data = docSnap.data();
                     setCompanyNameState(data.companyName || 'TaskMaster Pro');
                     setLogoUrlState(data.logoUrl || null);
+                    setDisableAdminLoginState(data.disableAdminLogin || false);
                 }
             } catch (error) {
                 console.error("Error fetching company settings:", error);
@@ -56,6 +60,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
     };
 
+    const setDisableAdminLogin = async (disabled: boolean) => {
+        setDisableAdminLoginState(disabled);
+        await setDoc(settingsDocRef, { disableAdminLogin: disabled }, { merge: true });
+    };
+
     const value = {
         companyName,
         setCompanyName,
@@ -63,6 +72,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLogoUrl,
         avatarUrl,
         setAvatarUrl,
+        disableAdminLogin,
+        setDisableAdminLogin,
         loading
     };
 

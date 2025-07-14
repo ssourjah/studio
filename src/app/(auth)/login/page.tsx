@@ -15,7 +15,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function LoginPage() {
-  const { companyName } = useSettings();
+  const { companyName, disableAdminLogin, loading: settingsLoading } = useSettings();
   const { toast } = useToast();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -25,6 +25,16 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (email.toLowerCase() === 'admin@taskmaster.pro' && disableAdminLogin) {
+        toast({
+          title: "Login Disabled",
+          description: "Default admin login has been disabled by an administrator.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+    }
 
     if (!email || !password) {
       toast({
@@ -97,7 +107,7 @@ export default function LoginPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || settingsLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -113,12 +123,12 @@ export default function LoginPage() {
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || settingsLoading}
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || settingsLoading}>
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
             <div className="text-center text-sm">

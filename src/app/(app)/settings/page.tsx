@@ -8,21 +8,29 @@ import { useSettings } from "@/context/SettingsContext";
 import { ChangeEvent, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
-  const { companyName, setCompanyName, logoUrl, setLogoUrl, loading } = useSettings();
+  const { 
+    companyName, setCompanyName, 
+    logoUrl, setLogoUrl, 
+    disableAdminLogin, setDisableAdminLogin, 
+    loading 
+  } = useSettings();
   const { toast } = useToast();
 
   const [localCompanyName, setLocalCompanyName] = useState('');
   const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null);
+  const [localDisableAdminLogin, setLocalDisableAdminLogin] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading) {
       setLocalCompanyName(companyName);
       setPreviewLogoUrl(logoUrl);
+      setLocalDisableAdminLogin(disableAdminLogin);
     }
-  }, [companyName, logoUrl, loading]);
+  }, [companyName, logoUrl, disableAdminLogin, loading]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,6 +63,25 @@ export default function SettingsPage() {
       setIsSaving(false);
     }
   };
+
+  const handleAdminSettingsSave = async () => {
+    setIsSaving(true);
+    try {
+        await setDisableAdminLogin(localDisableAdminLogin);
+        toast({
+            title: "Admin Settings Saved",
+            description: "Your administrator settings have been updated.",
+        });
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: "Failed to save admin settings.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
   
   if (loading) {
     return (
@@ -74,6 +101,16 @@ export default function SettingsPage() {
                         <Skeleton className="h-10 w-full" />
                         <Skeleton className="h-4 w-1/2" />
                     </div>
+                     <Skeleton className="h-10 w-36" />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                     <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <Skeleton className="h-10 w-full" />
                      <Skeleton className="h-10 w-36" />
                 </CardContent>
             </Card>
@@ -147,10 +184,22 @@ export default function SettingsPage() {
           <CardDescription>Manage administrator account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="space-y-2">
-                <Label>Default admin password is 'admin'. Please change it.</Label>
-                 <Button>Change Password</Button>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                    <Label htmlFor="disable-admin" className="text-base">Disable Default Admin</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Disable the default 'admin@taskmaster.pro' user login.
+                    </p>
+                </div>
+                <Switch
+                    id="disable-admin"
+                    checked={localDisableAdminLogin}
+                    onCheckedChange={setLocalDisableAdminLogin}
+                />
             </div>
+             <Button onClick={handleAdminSettingsSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Admin Settings'}
+             </Button>
         </CardContent>
       </Card>
     </div>
