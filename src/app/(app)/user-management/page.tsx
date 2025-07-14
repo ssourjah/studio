@@ -149,7 +149,7 @@ export default function UserManagementPage() {
             <Button asChild>
                 <Link href="/user-management/invite">
                     <PlusCircle />
-                    Invite New User
+                    Create New User
                 </Link>
             </Button>
           )}
