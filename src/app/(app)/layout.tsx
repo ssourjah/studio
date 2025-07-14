@@ -26,7 +26,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const userMenuItems = [
@@ -47,6 +47,11 @@ const managementMenuItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, userRole, loading, logout } = useAuth();
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -54,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, loading, router]);
   
-  if (loading) {
+  if (!isClient || loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
@@ -99,7 +104,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 items-center justify-end gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2" suppressHydrationWarning>
+              <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={currentUser.avatarUrl || "https://placehold.co/40x40.png"}
