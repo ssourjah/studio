@@ -27,29 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (user) {
-        // User is logged in, fetch their data
-        const userDocRef = doc(db, 'users', user.uid);
-        try {
-            const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-              const userData = { id: docSnap.id, ...docSnap.data() } as User;
-              setCurrentUser(userData);
-            } else {
-              // User exists in Auth but not in Firestore, treat as logged out
-              setCurrentUser(null);
-              setUserRole(null);
-            }
-        } catch (error) {
-            // Likely a permission error if rules are not set up correctly for users to read their own doc
-            console.error("Error fetching user document:", error);
-            setCurrentUser(null);
-            setUserRole(null);
-        }
+        // If user is authenticated, we can proceed to get their data
+        // The user data listener is set up in the next useEffect
       } else {
-        // User is logged out
+        // User is logged out, clear all data
         setCurrentUser(null);
         setUserRole(null);
       }
@@ -60,34 +44,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let unsubscribeUser: (() => void) | undefined;
     let unsubscribeRole: (() => void) | undefined;
-  
-    if (currentUser?.roleId) {
-      const roleDocRef = doc(db, 'roles', currentUser.roleId);
-      unsubscribeRole = onSnapshot(
-        roleDocRef,
-        (docSnap) => {
-          if (docSnap.exists()) {
-            setUserRole({ id: docSnap.id, ...docSnap.data() } as Role);
+
+    if (firebaseUser) {
+      // User is logged in, fetch their data from Firestore
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const userData = { id: docSnap.id, ...docSnap.data() } as User;
+          setCurrentUser(userData);
+
+          // Now, listen for role changes based on the user's roleId
+          if (userData.roleId) {
+            const roleDocRef = doc(db, 'roles', userData.roleId);
+            unsubscribeRole = onSnapshot(roleDocRef, (roleSnap) => {
+              if (roleSnap.exists()) {
+                setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
+              } else {
+                setUserRole(null);
+              }
+            });
           } else {
             setUserRole(null);
           }
-        },
-        (error) => {
-          console.error('Error fetching role:', error);
+        } else {
+          // User exists in Auth but not in Firestore, treat as logged out
+          setCurrentUser(null);
           setUserRole(null);
         }
-      );
+      });
     } else {
+      // No user, clear data
+      setCurrentUser(null);
       setUserRole(null);
     }
-  
+
     return () => {
-      if (unsubscribeRole) {
-        unsubscribeRole();
-      }
+      if (unsubscribeUser) unsubscribeUser();
+      if (unsubscribeRole) unsubscribeRole();
     };
-  }, [currentUser?.roleId]);
+  }, [firebaseUser]);
 
 
   const logout = async () => {
