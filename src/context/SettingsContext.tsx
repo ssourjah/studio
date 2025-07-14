@@ -1,21 +1,58 @@
+
 'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface SettingsContextType {
     companyName: string;
-    setCompanyName: (name: string) => void;
+    setCompanyName: (name: string) => Promise<void>;
     logoUrl: string | null;
-    setLogoUrl: (url: string | null) => void;
+    setLogoUrl: (url: string | null) => Promise<void>;
     avatarUrl: string | null;
     setAvatarUrl: (url: string | null) => void;
+    loading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+// Define a single document reference for company settings
+const settingsDocRef = doc(db, 'settings', 'company');
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [companyName, setCompanyName] = useState('TaskMaster Pro');
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
+    const [logoUrl, setLogoUrlState] = useState<string | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setCompanyNameState(data.companyName || 'TaskMaster Pro');
+                    setLogoUrlState(data.logoUrl || null);
+                }
+            } catch (error) {
+                console.error("Error fetching company settings:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSettings();
+    }, []);
+
+    const setCompanyName = async (name: string) => {
+        setCompanyNameState(name);
+        await setDoc(settingsDocRef, { companyName: name }, { merge: true });
+    };
+
+    const setLogoUrl = async (url: string | null) => {
+        setLogoUrlState(url);
+        await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
+    };
 
     const value = {
         companyName,
@@ -23,7 +60,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         logoUrl,
         setLogoUrl,
         avatarUrl,
-        setAvatarUrl
+        setAvatarUrl,
+        loading
     };
 
     return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

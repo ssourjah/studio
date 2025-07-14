@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -5,20 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/context/SettingsContext";
 import { ChangeEvent, useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
-  const { companyName, setCompanyName, logoUrl, setLogoUrl } = useSettings();
+  const { companyName, setCompanyName, logoUrl, setLogoUrl, loading } = useSettings();
+  const { toast } = useToast();
 
-  const [localCompanyName, setLocalCompanyName] = useState(companyName);
-  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(logoUrl);
-
-  useEffect(() => {
-    setLocalCompanyName(companyName);
-  }, [companyName]);
+  const [localCompanyName, setLocalCompanyName] = useState('');
+  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setPreviewLogoUrl(logoUrl);
-  }, [logoUrl]);
+    if (!loading) {
+      setLocalCompanyName(companyName);
+      setPreviewLogoUrl(logoUrl);
+    }
+  }, [companyName, logoUrl, loading]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,10 +35,51 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveChanges = () => {
-    setCompanyName(localCompanyName);
-    setLogoUrl(previewLogoUrl);
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      await setCompanyName(localCompanyName);
+      await setLogoUrl(previewLogoUrl);
+      toast({
+        title: "Settings Saved",
+        description: "Your company information has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Failed to save settings:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
+  
+  if (loading) {
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                     <Skeleton className="h-10 w-36" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -55,11 +100,13 @@ export default function SettingsPage() {
                 {previewLogoUrl && (
                   <div className="mt-4">
                     <p className="text-sm font-medium">Logo Preview:</p>
-                    <img src={previewLogoUrl} alt="Company Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2" />
+                    <img src={previewLogoUrl} alt="Company Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-muted" />
                   </div>
                 )}
             </div>
-            <Button onClick={handleSaveChanges}>Save Company Info</Button>
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Company Info'}
+            </Button>
         </CardContent>
       </Card>
 
