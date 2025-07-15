@@ -71,7 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Skeleton className="h-6 w-24 hidden md:block" />
           </div>
         </header>
-        <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6">
+        <main className="flex-1 overflow-auto bg-background p-4 md:p-6">
           <div className="space-y-4">
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-64 w-full" />
@@ -194,7 +194,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </DropdownMenu>
         </div>
       </header>
-      <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6">{children}</main>
+      <main className="flex-1 overflow-auto bg-background p-4 md:p-6">{children}</main>
     </div>
   );
 }
