@@ -25,9 +25,19 @@ export type AccessLevel = 'Admin' | 'Support' | 'Technician' | 'Manager';
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type FontSizePreference = 'sm' | 'base' | 'lg';
 
+export interface ColorTheme {
+    background: string;
+    foreground: string;
+    card: string;
+    primary: string;
+    accent: string;
+}
+
 export interface UserPreferences {
-    theme: ThemePreference;
-    fontSize: FontSizePreference;
+    theme?: ThemePreference;
+    fontSize?: FontSizePreference;
+    customLightTheme?: ColorTheme;
+    customDarkTheme?: ColorTheme;
 }
 
 export type User = {
