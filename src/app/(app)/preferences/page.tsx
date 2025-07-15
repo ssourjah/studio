@@ -25,6 +25,7 @@ export default function PreferencesPage() {
     }, [currentUser]);
 
     const applyTheme = (theme: ThemePreference) => {
+        localStorage.setItem('theme', theme); // Store in local storage
         document.documentElement.classList.remove('light', 'dark');
         if (theme === 'system') {
             const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -50,6 +51,9 @@ export default function PreferencesPage() {
 
             // Optimistically update local user state
             setCurrentUser({ ...currentUser, preferences: newPreferences });
+            
+            // Also update local storage upon saving
+            localStorage.setItem('theme', selectedTheme);
 
             toast({
                 title: 'Preferences Saved',

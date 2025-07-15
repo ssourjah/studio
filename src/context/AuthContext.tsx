@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      setLoading(true); // Start loading whenever auth state changes
+      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (userSnap) => {
@@ -34,46 +34,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = { id: userSnap.id, ...userSnap.data() } as User;
             setCurrentUser(userData);
 
-            // Apply theme from user preferences, defaulting to 'system'
-            const theme = userData.preferences?.theme || 'system';
-            document.documentElement.classList.remove('light', 'dark');
-            if (theme === 'system') {
-                const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.classList.add(systemIsDark ? 'dark' : 'light');
-            } else {
-                document.documentElement.classList.add(theme);
+            // Sync database preference with local storage
+            const dbTheme = userData.preferences?.theme || 'system';
+            if (localStorage.getItem('theme') !== dbTheme) {
+              localStorage.setItem('theme', dbTheme);
             }
 
             if (userData.roleId) {
               const roleDocRef = doc(db, 'roles', userData.roleId);
               const unsubscribeRole = onSnapshot(roleDocRef, (roleSnap) => {
-                if (roleSnap.exists()) {
-                  setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
-                } else {
-                  setUserRole(null);
-                }
-                setLoading(false); // Stop loading after role is fetched
-              }, () => setLoading(false)); // Stop loading on role fetch error
+                setUserRole(roleSnap.exists() ? { id: roleSnap.id, ...roleSnap.data() } as Role : null);
+                setLoading(false); 
+              }, () => setLoading(false));
               return () => unsubscribeRole();
             } else {
               setUserRole(null);
-              setLoading(false); // Stop loading if no roleId
+              setLoading(false);
             }
           } else {
-            // User in Auth but not Firestore. Treat as logged out.
             setCurrentUser(null);
             setUserRole(null);
             setLoading(false);
           }
         }, () => {
-            // Error fetching user document
             setCurrentUser(null);
             setUserRole(null);
             setLoading(false);
         });
         return () => unsubscribeUser();
       } else {
-        // User is logged out.
         setCurrentUser(null);
         setUserRole(null);
         setLoading(false);
