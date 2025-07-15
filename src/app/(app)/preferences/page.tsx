@@ -10,7 +10,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ThemePreference, FontSizePreference, UserPreferences, ColorTheme } from '@/lib/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Sun, Moon, Laptop, Type, Palette, Paintbrush } from 'lucide-react';
+import { Sun, Moon, Laptop, Type, Palette, Paintbrush, Undo2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -37,28 +37,28 @@ function ColorPicker({ label, color, onChange }: { label: string, color: string,
     );
 }
 
+const defaultLight: ColorTheme = {
+    background: '240 10% 96%',
+    foreground: '222 47% 11%',
+    card: '0 0% 100%',
+    primary: '236 41% 48%',
+    accent: '240 5% 90%',
+};
+
+const defaultDark: ColorTheme = {
+    background: '222 47% 11%',
+    foreground: '210 40% 98%',
+    card: '222 47% 11%',
+    primary: '236 41% 48%',
+    accent: '217 33% 17%',
+};
+
 export default function PreferencesPage() {
     const { currentUser, setCurrentUser } = useAuth();
     const { toast } = useToast();
     const [selectedTheme, setSelectedTheme] = useState<ThemePreference>('system');
     const [selectedFontSize, setSelectedFontSize] = useState<FontSizePreference>('base');
     const [isSaving, setIsSaving] = useState(false);
-
-    const defaultLight: ColorTheme = {
-        background: '240 10% 96%',
-        foreground: '222 47% 11%',
-        card: '0 0% 100%',
-        primary: '236 41% 48%',
-        accent: '240 5% 90%',
-    };
-
-    const defaultDark: ColorTheme = {
-        background: '222 47% 11%',
-        foreground: '210 40% 98%',
-        card: '222 47% 11%',
-        primary: '236 41% 48%',
-        accent: '217 33% 17%',
-    };
     
     const [lightThemeColors, setLightThemeColors] = useState<ColorTheme>(defaultLight);
     const [darkThemeColors, setDarkThemeColors] = useState<ColorTheme>(defaultDark);
@@ -250,13 +250,17 @@ export default function PreferencesPage() {
                             <TabsTrigger value="dark_theme"><Moon className="mr-2 h-4 w-4" />Dark Theme</TabsTrigger>
                         </TabsList>
                         <TabsContent value="light_theme" className="pt-4">
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
                                 <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
                                 <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
                                 <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
                                 <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
                             </div>
+                             <Button variant="outline" className="mt-6" onClick={() => setLightThemeColors(defaultLight)}>
+                                <Undo2 className="mr-2 h-4 w-4" />
+                                Reset to Default
+                            </Button>
                         </TabsContent>
                         <TabsContent value="dark_theme" className="pt-4">
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -266,6 +270,10 @@ export default function PreferencesPage() {
                                 <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
                                 <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
                             </div>
+                             <Button variant="outline" className="mt-6" onClick={() => setDarkThemeColors(defaultDark)}>
+                                <Undo2 className="mr-2 h-4 w-4" />
+                                Reset to Default
+                            </Button>
                         </TabsContent>
                     </Tabs>
                 </CardContent>
@@ -277,4 +285,5 @@ export default function PreferencesPage() {
             </Button>
         </div>
     );
-}
+
+    
