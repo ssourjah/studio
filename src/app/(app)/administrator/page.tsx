@@ -380,7 +380,7 @@ function AppSettingsTab() {
     } catch (error) {
         toast({
             title: "Error",
-            description: "Failed to save SMTP settings.",
+            description: "Failed to save SMTP settings. Please try again.",
             variant: "destructive",
         });
     } finally {
@@ -399,7 +399,7 @@ function AppSettingsTab() {
     } catch (error) {
         toast({
             title: "Error",
-            description: "Failed to save admin settings.",
+            description: "Failed to save admin settings. Please try again.",
             variant: "destructive",
         });
     } finally {
