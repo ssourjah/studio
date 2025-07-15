@@ -54,7 +54,7 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
               <DialogTitle>{task.name}</DialogTitle>
               <DialogDescription>{task.jobNumber}</DialogDescription>
             </div>
-             <Badge variant="secondary" className={cn("text-secondary-foreground mt-1", getStatusBadgeColor(task.status))}>
+             <Badge variant="secondary" className={cn("text-secondary-foreground mt-3", getStatusBadgeColor(task.status))}>
                 {task.status}
             </Badge>
           </div>
