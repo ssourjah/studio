@@ -28,8 +28,16 @@ function applyCustomTheme(lightTheme: ColorTheme | null, darkTheme: ColorTheme |
         document.head.appendChild(styleElement);
     }
     
-    const lightVars = lightTheme ? Object.entries(lightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-    const darkVars = darkTheme ? Object.entries(darkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
+    const lightVars = lightTheme ? Object.entries(lightTheme).map(([key, value]) => {
+        const cssVarName = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+        return `--${cssVarName}: ${value};`;
+    }).join(' ') : '';
+    
+    const darkVars = darkTheme ? Object.entries(darkTheme).map(([key, value]) => {
+        const cssVarName = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+        return `--${cssVarName}: ${value};`;
+    }).join(' ') : '';
+
 
     styleElement.innerHTML = `
         :root { ${lightVars} }
