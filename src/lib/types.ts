@@ -23,9 +23,11 @@ export type UserStatus = 'Active' | 'Pending' | 'Suspended';
 export type AccessLevel = 'Admin' | 'Support' | 'Technician' | 'Manager';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
+export type FontSizePreference = 'sm' | 'base' | 'lg';
 
 export interface UserPreferences {
     theme: ThemePreference;
+    fontSize: FontSizePreference;
 }
 
 export type User = {

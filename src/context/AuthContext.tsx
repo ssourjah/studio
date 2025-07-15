@@ -34,11 +34,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = { id: userSnap.id, ...userSnap.data() } as User;
             setCurrentUser(userData);
 
-            // Sync database preference with local storage
+            // Sync database preference with local storage and apply them
             const dbTheme = userData.preferences?.theme || 'system';
             if (localStorage.getItem('theme') !== dbTheme) {
               localStorage.setItem('theme', dbTheme);
             }
+            document.documentElement.classList.remove('light', 'dark');
+            if (dbTheme === 'system') {
+                const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.add(systemIsDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.classList.add(dbTheme);
+            }
+
+            const dbFontSize = userData.preferences?.fontSize || 'base';
+            if (localStorage.getItem('fontSize') !== dbFontSize) {
+              localStorage.setItem('fontSize', dbFontSize);
+            }
+            document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
+            document.documentElement.classList.add(`text-${dbFontSize}`);
+
 
             if (userData.roleId) {
               const roleDocRef = doc(db, 'roles', userData.roleId);

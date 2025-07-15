@@ -61,6 +61,21 @@ body {
     --chart-4: 31 100% 63%;
     --chart-5: 197 37% 24%;
   }
+
+  /* Font size classes */
+  .text-sm {
+    font-size: 0.875rem; /* 14px */
+  }
+  .text-base {
+    font-size: 1rem; /* 16px */
+  }
+  .text-lg {
+    font-size: 1.125rem; /* 18px */
+  }
+
+  html.text-sm { font-size: 14px; }
+  html.text-base { font-size: 16px; }
+  html.text-lg { font-size: 18px; }
 }
 
 @layer base {

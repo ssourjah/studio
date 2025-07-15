@@ -19,6 +19,9 @@ const themeInitializerScript = `
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    const fontSize = localStorage.getItem('fontSize') || 'base';
+    document.documentElement.classList.add('text-' + fontSize);
   })();
 `;
 
