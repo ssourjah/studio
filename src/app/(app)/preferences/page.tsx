@@ -73,6 +73,42 @@ export default function PreferencesPage() {
         }
     }, [currentUser]);
 
+    // Effect for real-time theme preview
+    useEffect(() => {
+        const styleId = 'custom-theme-preview';
+        let styleElement = document.getElementById(styleId);
+
+        if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = styleId;
+            document.head.appendChild(styleElement);
+        }
+
+        const lightVars = Object.entries(lightThemeColors).map(([key, value]) => `--${key}: ${value};`).join(' ');
+        const darkVars = Object.entries(darkThemeColors).map(([key, value]) => `--${key}: ${value};`).join(' ');
+
+        styleElement.innerHTML = `
+            :root { ${lightVars} }
+            .dark { ${darkVars} }
+        `;
+        
+        // Cleanup function to remove the preview styles when the user navigates away without saving
+        return () => {
+            const originalTheme = currentUser?.preferences;
+            if (originalTheme) {
+                 const lightVars = originalTheme.customLightTheme ? Object.entries(originalTheme.customLightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
+                 const darkVars = originalTheme.customDarkTheme ? Object.entries(originalTheme.customDarkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
+                 if (styleElement) {
+                     styleElement.innerHTML = `
+                        :root { ${lightVars} }
+                        .dark { ${darkVars} }
+                     `;
+                 }
+            }
+        };
+
+    }, [lightThemeColors, darkThemeColors, currentUser?.preferences]);
+
     const applyTheme = (theme: ThemePreference) => {
         localStorage.setItem('theme', theme);
         document.documentElement.classList.remove('light', 'dark');
@@ -287,3 +323,4 @@ export default function PreferencesPage() {
     );
 
     
+}
