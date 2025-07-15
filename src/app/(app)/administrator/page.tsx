@@ -322,9 +322,12 @@ function AppSettingsTab() {
     smtpPassword: '',
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingCompany, setIsSavingCompany] = useState(false);
+  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+  const [isSavingAdmin, setIsSavingAdmin] = useState(false);
 
   const canEditSettings = userRole?.permissions.settings?.edit ?? false;
+  const anySaving = isSavingCompany || isSavingSmtp || isSavingAdmin;
 
   useEffect(() => {
     if (!loading) {
@@ -352,7 +355,7 @@ function AppSettingsTab() {
   }
 
   const handleCompanyInfoSave = async () => {
-    setIsSaving(true);
+    setIsSavingCompany(true);
     try {
       await setCompanyName(localCompanyName);
       await setLogoUrlLight(previewLogoUrlLight);
@@ -369,12 +372,12 @@ function AppSettingsTab() {
       });
       console.error("Failed to save settings:", error);
     } finally {
-      setIsSaving(false);
+      setIsSavingCompany(false);
     }
   };
 
   const handleSmtpSave = async () => {
-    setIsSaving(true);
+    setIsSavingSmtp(true);
     try {
         await setSmtpSettings(localSmtpSettings);
         toast({
@@ -388,12 +391,12 @@ function AppSettingsTab() {
             variant: "destructive",
         });
     } finally {
-        setIsSaving(false);
+        setIsSavingSmtp(false);
     }
   };
 
   const handleAdminSettingsSave = async () => {
-    setIsSaving(true);
+    setIsSavingAdmin(true);
     try {
         await setDisableAdminLogin(localDisableAdminLogin);
         toast({
@@ -407,7 +410,7 @@ function AppSettingsTab() {
             variant: "destructive",
         });
     } finally {
-        setIsSaving(false);
+        setIsSavingAdmin(false);
     }
   };
   
@@ -454,7 +457,7 @@ function AppSettingsTab() {
           <CardDescription>Update your company's details and branding.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <fieldset disabled={!canEditSettings || isSaving}>
+            <fieldset disabled={!canEditSettings || anySaving}>
                 <div className="space-y-2">
                     <Label htmlFor="company-name">Company Name</Label>
                     <Input id="company-name" value={localCompanyName} onChange={(e) => setLocalCompanyName(e.target.value)} />
@@ -487,8 +490,8 @@ function AppSettingsTab() {
                     </div>
                 </div>
                 
-                <Button onClick={handleCompanyInfoSave} disabled={isSaving || !canEditSettings} className="mt-6">
-                  {isSaving ? 'Saving...' : 'Save Company Info'}
+                <Button onClick={handleCompanyInfoSave} disabled={isSavingCompany || !canEditSettings} className="mt-6">
+                  {isSavingCompany ? 'Saving...' : 'Save Company Info'}
                 </Button>
             </fieldset>
         </CardContent>
@@ -500,7 +503,7 @@ function AppSettingsTab() {
           <CardDescription>Configure your outgoing email server to send registration invites.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <fieldset disabled={!canEditSettings || isSaving}>
+            <fieldset disabled={!canEditSettings || anySaving}>
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="smtp-host">SMTP Host</Label>
@@ -520,7 +523,7 @@ function AppSettingsTab() {
                     <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
                 </div>
                 <div className="flex gap-2 mt-4">
-                    <Button onClick={handleSmtpSave} disabled={isSaving || !canEditSettings}>{isSaving ? 'Saving...' : 'Save SMTP Settings'}</Button>
+                    <Button onClick={handleSmtpSave} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
                 </div>
             </fieldset>
         </CardContent>
@@ -532,7 +535,7 @@ function AppSettingsTab() {
           <CardDescription>Manage administrator account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <fieldset disabled={!canEditSettings || isSaving}>
+            <fieldset disabled={!canEditSettings || anySaving}>
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                         <Label htmlFor="disable-admin" className="text-base">Disable Default Admin</Label>
@@ -546,8 +549,8 @@ function AppSettingsTab() {
                         onCheckedChange={setLocalDisableAdminLogin}
                     />
                 </div>
-                 <Button onClick={handleAdminSettingsSave} disabled={isSaving || !canEditSettings} className="mt-4">
-                    {isSaving ? 'Saving...' : 'Save Admin Settings'}
+                 <Button onClick={handleAdminSettingsSave} disabled={isSavingAdmin || !canEditSettings} className="mt-4">
+                    {isSavingAdmin ? 'Saving...' : 'Save Admin Settings'}
                  </Button>
             </fieldset>
         </CardContent>
