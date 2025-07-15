@@ -87,7 +87,7 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center gap-6">
        <div className="flex flex-col items-center gap-3">
-          <AppLogo showName={false} />
+          <AppLogo showName={false} className="h-16 w-16" />
           <h1 className="text-3xl font-bold font-headline">{companyName}</h1>
        </div>
       <Card className="w-full max-w-lg">
@@ -164,5 +164,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-  
