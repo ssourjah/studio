@@ -142,8 +142,9 @@ export default function ReportsPage() {
                     <TableCell>{task.assignedTechnician}</TableCell>
                     <TableCell>{format(new Date(task.date), "LLL dd, y")}</TableCell>
                     <TableCell>
-                        <Badge variant={task.status === 'Completed' ? 'default' : task.status === 'Cancelled' ? 'destructive' : 'secondary'}
+                        <Badge variant={task.status === 'Cancelled' ? 'destructive' : 'secondary'}
                          className={cn(
+                            "text-secondary-foreground",
                             task.status === 'Completed' && 'bg-green-600/80',
                             task.status === 'Incomplete' && 'bg-orange-500/80',
                         )}

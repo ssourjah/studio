@@ -20,7 +20,7 @@ body {
     --secondary-foreground: 222 47% 11%;
     --muted: 240 5% 90%;
     --muted-foreground: 240 4% 46%;
-    --accent: 31 100% 63%; /* Soft Orange */
+    --accent: 240 5% 90%; /* Reverted from Soft Orange */
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -48,7 +48,7 @@ body {
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 31 100% 63%; /* Soft Orange */
+    --accent: 217 33% 17%; /* Reverted from Soft Orange */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;

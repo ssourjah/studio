@@ -282,8 +282,9 @@ export default function TasksPage() {
                                        <TableCell className="font-medium">{task.name}</TableCell>
                                        <TableCell>{task.assignedTechnician}</TableCell>
                                        <TableCell>
-                                           <Badge variant={task.status === 'Completed' ? 'default' : task.status === 'Cancelled' ? 'destructive' : 'secondary'}
+                                           <Badge variant={task.status === 'Cancelled' ? 'destructive' : 'secondary'}
                                            className={cn(
+                                               "text-secondary-foreground",
                                                task.status === 'Completed' && 'bg-green-600/80',
                                                task.status === 'Incomplete' && 'bg-orange-500/80',
                                            )}

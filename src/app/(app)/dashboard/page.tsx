@@ -15,6 +15,7 @@ import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { userRole } = useAuth();
@@ -110,7 +111,11 @@ export default function DashboardPage() {
                                  )}
                             </CardContent>
                              <div className="p-6 pt-0">
-                                <Badge variant="secondary" className="bg-orange-500/80 text-secondary-foreground">
+                                <Badge variant="secondary" className={cn(
+                                    "text-secondary-foreground",
+                                    task.status === 'Completed' && 'bg-green-600/80',
+                                    task.status === 'Incomplete' && 'bg-orange-500/80',
+                                )}>
                                     {task.status}
                                 </Badge>
                              </div>
