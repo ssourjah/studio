@@ -87,8 +87,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-       <AppLogo showName={false} />
-       <h1 className="text-3xl font-bold font-headline">{companyName}</h1>
+       <div className="flex flex-col items-center gap-3">
+            <AppLogo showName={false} />
+            <h1 className="text-3xl font-bold font-headline">{companyName}</h1>
+       </div>
       <Card className="w-full max-w-sm">
         <form onSubmit={handleLogin}>
           <CardHeader>

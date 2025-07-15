@@ -4,18 +4,27 @@ import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useSettings } from '@/context/SettingsContext';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface AppLogoProps {
   showName?: boolean;
+  className?: string;
 }
 
-export function AppLogo({ showName = true }: AppLogoProps) {
+export function AppLogo({ showName = true, className }: AppLogoProps) {
   const { companyName, logoUrlLight, logoUrlDark } = useSettings();
 
   const hasCustomLogo = logoUrlLight || logoUrlDark;
 
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 text-foreground font-bold text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-2 -ml-2 mr-6">
+    <Link 
+      href="/dashboard" 
+      className={cn(
+        "flex items-center gap-2.5 text-foreground font-bold text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md",
+        showName && "px-2 -ml-2 mr-6",
+        className
+      )}
+    >
       <div className="bg-transparent flex items-center justify-center h-9">
         {hasCustomLogo ? (
           <>
