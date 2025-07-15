@@ -36,7 +36,6 @@ const userMenuItems = [
 ];
 
 const workspaceMenuItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
     { href: '/tasks', label: 'Create Task', icon: ListTodo, permission: 'tasks' },
     { href: '/reports', label: 'Task Report', icon: FileSpreadsheet, permission: 'reports' },
 ] as const;
@@ -187,10 +186,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               )}
 
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LifeBuoy className="mr-2 h-4 w-4" />
-                Support
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
