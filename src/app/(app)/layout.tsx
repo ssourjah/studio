@@ -35,11 +35,14 @@ const userMenuItems = [
   { href: '/preferences', label: 'Preferences', icon: Palette },
 ];
 
-const managementMenuItems = [
+const workspaceMenuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
     { href: '/tasks', label: 'Create Task', icon: ListTodo, permission: 'tasks' },
-    { href: '/task-management', label: 'Task Management', icon: ListTodo, permission: 'taskManagement' },
     { href: '/reports', label: 'Task Report', icon: FileSpreadsheet, permission: 'reports' },
+] as const;
+
+const managementMenuItems = [
+    { href: '/task-management', label: 'Task Management', icon: ListTodo, permission: 'taskManagement' },
     { href: '/user-management', label: 'User Management', icon: Users, permission: 'userManagement' },
 ] as const;
 
@@ -79,8 +82,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If loading is finished and there's no user, the useEffect above will redirect.
-  // We can return null here to prevent rendering the layout for a split second before redirection.
   if (!currentUser) {
     return null;
   }
@@ -94,9 +95,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   const canSeeAdmin = userRole?.permissions.administrator?.read || userRole?.permissions.settings?.read;
-  const canSeeManagementSection = canSeeAdmin || managementMenuItems.some(item => 
-    userRole?.permissions[item.permission]?.read
-  );
+  const canSeeWorkspaceSection = workspaceMenuItems.some(item => userRole?.permissions[item.permission]?.read);
+  const canSeeManagementSection = managementMenuItems.some(item => userRole?.permissions[item.permission]?.read);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -132,6 +132,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuItem>
               ))}
               
+              {canSeeWorkspaceSection && (
+                 <>
+                  <DropdownMenuSeparator />
+                   {workspaceMenuItems.map((item) => {
+                    const canRead = userRole?.permissions[item.permission]?.read;
+                    if (canRead) {
+                        return (
+                            <DropdownMenuItem key={item.label} asChild>
+                                <Link href={item.href}>
+                                    <item.icon className="mr-2 h-4 w-4" />
+                                    {item.label}
+                                </Link>
+                            </DropdownMenuItem>
+                        );
+                    }
+                    return null;
+                  })}
+                 </>
+              )}
+
               {canSeeManagementSection && (
                 <>
                   <DropdownMenuSeparator />
@@ -151,15 +171,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     }
                     return null;
                   })}
-                  {canSeeAdmin && (
+                </>
+              )}
+
+              {canSeeAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                           <Link href="/administrator">
                               <Shield className="mr-2 h-4 w-4" />
                               Administrator
                           </Link>
                       </DropdownMenuItem>
-                  )}
-                </>
+                  </>
               )}
 
               <DropdownMenuSeparator />
