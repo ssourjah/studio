@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -72,13 +73,39 @@ export default function ProfilePage() {
   };
 
   const onPasswordChangeSubmit = async (data: z.infer<typeof passwordSchema>) => {
-    // In a real application, you would re-authenticate the user with their current password
-    // before allowing a password change. For this demo, we'll skip that step.
-    toast({
-      title: "Password Updated",
-      description: "Your password has been changed successfully. (Demo only)",
-    });
-    reset();
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      toast({ title: "Error", description: "Could not find user to update.", variant: "destructive" });
+      return;
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
+    
+    try {
+      // Step 1: Re-authenticate the user
+      await reauthenticateWithCredential(user, credential);
+
+      // Step 2: If re-authentication is successful, update the password
+      await updatePassword(user, data.newPassword);
+
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      });
+      reset();
+
+    } catch (error: any) {
+        let description = "An unexpected error occurred.";
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            description = "The current password you entered is incorrect.";
+        }
+        console.error("Password update error:", error);
+        toast({
+            title: "Password Update Failed",
+            description,
+            variant: "destructive"
+        });
+    }
   };
   
   const getInitials = (name: string) => {
@@ -210,4 +237,4 @@ export default function ProfilePage() {
   );
 }
 
-  
+    
