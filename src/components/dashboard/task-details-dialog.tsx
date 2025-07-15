@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -31,12 +32,32 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
     window.open(url, '_blank');
   };
 
+  const getStatusBadgeColor = (status: TaskStatus) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-green-600/80';
+      case 'Incomplete':
+        return 'bg-orange-500/80';
+      case 'Cancelled':
+        return 'bg-destructive';
+      default:
+        return 'bg-secondary';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="break-words">
         <DialogHeader>
-          <DialogTitle>{task.name}</DialogTitle>
-          <DialogDescription>{task.jobNumber}</DialogDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle>{task.name}</DialogTitle>
+              <DialogDescription>{task.jobNumber}</DialogDescription>
+            </div>
+             <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeColor(task.status))}>
+                {task.status}
+            </Badge>
+          </div>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <Separator />
@@ -78,13 +99,10 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
           </div>
            <Separator />
         </div>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-           <div className="flex items-center gap-2">
-                <Badge variant="secondary" className={cn("text-secondary-foreground", task.status === 'Incomplete' && 'bg-orange-500/80')}>
-                    {task.status}
-                </Badge>
+        <DialogFooter className="flex-col sm:flex-row sm:justify-end sm:items-center gap-2">
+           <div className="flex-1 flex justify-start">
                 {task.latitude && task.longitude && (
-                    <Button variant="outline" size="sm" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
+                    <Button variant="outline" onClick={() => handleNavigate(task.latitude!, task.longitude!)}>
                         <MapPin className="mr-2 h-4 w-4" />
                         Navigate
                     </Button>
