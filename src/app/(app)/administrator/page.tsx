@@ -79,13 +79,24 @@ export default function AdministratorPage() {
   };
 
   const handlePermissionChange = (service: PermissionLevel, level: keyof Permission) => {
-    setPermissions(prev => ({
-        ...prev,
-        [service]: {
-            ...prev[service],
-            [level]: !prev[service][level]
+    const isChecked = !permissions[service][level];
+    
+    setPermissions(prev => {
+        const newPermissions = { ...prev };
+        const servicePermissions = { ...newPermissions[service] };
+        
+        servicePermissions[level] = isChecked;
+
+        // If 'read' is unchecked, uncheck all others for that service
+        if (level === 'read' && !isChecked) {
+            servicePermissions.create = false;
+            servicePermissions.edit = false;
+            servicePermissions.delete = false;
         }
-    }));
+
+        newPermissions[service] = servicePermissions;
+        return newPermissions;
+    });
   };
 
   const handleSaveRole = async () => {
@@ -173,31 +184,41 @@ export default function AdministratorPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {services.map(service => (
-                                    <TableRow key={service.id}>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <span>{service.name}</span>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <ShieldQuestion className="h-4 w-4 text-muted-foreground" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{service.description}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        </TableCell>
-                                        {(['read', 'create', 'edit', 'delete'] as const).map(level => (
-                                            <TableCell key={level} className="text-center">
+                                {services.map(service => {
+                                    const canRead = permissions[service.id]?.read || false;
+                                    return (
+                                        <TableRow key={service.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <span>{service.name}</span>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <ShieldQuestion className="h-4 w-4 text-muted-foreground" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{service.description}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
                                                 <Checkbox
-                                                    checked={permissions[service.id]?.[level] || false}
-                                                    onCheckedChange={() => handlePermissionChange(service.id, level)}
+                                                    checked={canRead}
+                                                    onCheckedChange={() => handlePermissionChange(service.id, 'read')}
                                                 />
                                             </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
+                                            {(['create', 'edit', 'delete'] as const).map(level => (
+                                                <TableCell key={level} className="text-center">
+                                                    <Checkbox
+                                                        checked={permissions[service.id]?.[level] || false}
+                                                        onCheckedChange={() => handlePermissionChange(service.id, level)}
+                                                        disabled={!canRead}
+                                                    />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     </TooltipProvider>
