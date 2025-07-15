@@ -14,8 +14,10 @@ interface SmtpSettings {
 interface SettingsContextType {
     companyName: string;
     setCompanyName: (name: string) => Promise<void>;
-    logoUrl: string | null;
-    setLogoUrl: (url: string | null) => Promise<void>;
+    logoUrlLight: string | null;
+    setLogoUrlLight: (url: string | null) => Promise<void>;
+    logoUrlDark: string | null;
+    setLogoUrlDark: (url: string | null) => Promise<void>;
     disableAdminLogin: boolean;
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
     smtpSettings: SmtpSettings;
@@ -29,7 +31,8 @@ const settingsDocRef = doc(db, 'settings', 'company');
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
-    const [logoUrl, setLogoUrlState] = useState<string | null>(null);
+    const [logoUrlLight, setLogoUrlLightState] = useState<string | null>(null);
+    const [logoUrlDark, setLogoUrlDarkState] = useState<string | null>(null);
     const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
     const [smtpSettings, setSmtpSettingsState] = useState<SmtpSettings>({
         smtpHost: '',
@@ -47,7 +50,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     setCompanyNameState(data.companyName || 'TaskMaster Pro');
-                    setLogoUrlState(data.logoUrl || null);
+                    setLogoUrlLightState(data.logoUrlLight || null);
+                    setLogoUrlDarkState(data.logoUrlDark || null);
                     setDisableAdminLoginState(data.disableAdminLogin || false);
                     setSmtpSettingsState({
                         smtpHost: data.smtpHost || '',
@@ -71,9 +75,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         await setDoc(settingsDocRef, { companyName: name }, { merge: true });
     };
 
-    const setLogoUrl = async (url: string | null) => {
-        setLogoUrlState(url);
-        await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
+    const setLogoUrlLight = async (url: string | null) => {
+        setLogoUrlLightState(url);
+        await setDoc(settingsDocRef, { logoUrlLight: url }, { merge: true });
+    };
+
+    const setLogoUrlDark = async (url: string | null) => {
+        setLogoUrlDarkState(url);
+        await setDoc(settingsDocRef, { logoUrlDark: url }, { merge: true });
     };
 
     const setDisableAdminLogin = async (disabled: boolean) => {
@@ -89,8 +98,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const value = {
         companyName,
         setCompanyName,
-        logoUrl,
-        setLogoUrl,
+        logoUrlLight,
+        setLogoUrlLight,
+        logoUrlDark,
+        setLogoUrlDark,
         disableAdminLogin,
         setDisableAdminLogin,
         smtpSettings,

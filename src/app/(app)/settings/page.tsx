@@ -9,11 +9,13 @@ import { ChangeEvent, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
   const { 
     companyName, setCompanyName, 
-    logoUrl, setLogoUrl, 
+    logoUrlLight, setLogoUrlLight,
+    logoUrlDark, setLogoUrlDark,
     disableAdminLogin, setDisableAdminLogin, 
     smtpSettings, setSmtpSettings,
     loading 
@@ -21,7 +23,8 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   const [localCompanyName, setLocalCompanyName] = useState('');
-  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null);
+  const [previewLogoUrlLight, setPreviewLogoUrlLight] = useState<string | null>(null);
+  const [previewLogoUrlDark, setPreviewLogoUrlDark] = useState<string | null>(null);
   const [localDisableAdminLogin, setLocalDisableAdminLogin] = useState(false);
   const [localSmtpSettings, setLocalSmtpSettings] = useState({
     smtpHost: '',
@@ -35,18 +38,23 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!loading) {
       setLocalCompanyName(companyName);
-      setPreviewLogoUrl(logoUrl);
+      setPreviewLogoUrlLight(logoUrlLight);
+      setPreviewLogoUrlDark(logoUrlDark);
       setLocalDisableAdminLogin(disableAdminLogin);
       setLocalSmtpSettings(smtpSettings);
     }
-  }, [companyName, logoUrl, disableAdminLogin, smtpSettings, loading]);
+  }, [companyName, logoUrlLight, logoUrlDark, disableAdminLogin, smtpSettings, loading]);
 
-  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>, theme: 'light' | 'dark') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewLogoUrl(reader.result as string);
+        if (theme === 'light') {
+            setPreviewLogoUrlLight(reader.result as string);
+        } else {
+            setPreviewLogoUrlDark(reader.result as string);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -56,7 +64,8 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       await setCompanyName(localCompanyName);
-      await setLogoUrl(previewLogoUrl);
+      await setLogoUrlLight(previewLogoUrlLight);
+      await setLogoUrlDark(previewLogoUrlDark);
       toast({
         title: "Settings Saved",
         description: "Your company information has been updated.",
@@ -151,24 +160,41 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Company Information</CardTitle>
-          <CardDescription>Update your company's details.</CardDescription>
+          <CardDescription>Update your company's details and branding.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>
                 <Input id="company-name" value={localCompanyName} onChange={(e) => setLocalCompanyName(e.target.value)} />
             </div>
-            <div className="space-y-2">
-                <Label htmlFor="company-logo">Company Logo</Label>
-                <Input id="company-logo" type="file" onChange={handleLogoUpload} accept="image/*" />
-                <p className="text-sm text-muted-foreground">Upload a new logo for your company.</p>
-                {previewLogoUrl && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium">Logo Preview:</p>
-                    <img src={previewLogoUrl} alt="Company Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-muted" />
-                  </div>
-                )}
+
+            <Separator />
+
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="company-logo-light">Light Theme Logo</Label>
+                    <Input id="company-logo-light" type="file" onChange={(e) => handleLogoUpload(e, 'light')} accept="image/*" />
+                    <p className="text-sm text-muted-foreground">Best on light backgrounds. Transparent PNGs recommended.</p>
+                    {previewLogoUrlLight && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium">Preview:</p>
+                        <img src={previewLogoUrlLight} alt="Light Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-muted" />
+                      </div>
+                    )}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="company-logo-dark">Dark Theme Logo</Label>
+                    <Input id="company-logo-dark" type="file" onChange={(e) => handleLogoUpload(e, 'dark')} accept="image/*" />
+                    <p className="text-sm text-muted-foreground">Best on dark backgrounds. Transparent PNGs recommended.</p>
+                    {previewLogoUrlDark && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium">Preview:</p>
+                        <img src={previewLogoUrlDark} alt="Dark Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-card" />
+                      </div>
+                    )}
+                </div>
             </div>
+            
             <Button onClick={handleCompanyInfoSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Company Info'}
             </Button>
