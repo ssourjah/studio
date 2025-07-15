@@ -24,6 +24,10 @@ const registerSchema = z.object({
   employeeId: z.string().optional(),
   department: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password confirmation is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
 });
 
 export default function RegisterPage() {
@@ -133,13 +137,14 @@ export default function RegisterPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                    <div className="grid gap-2">
-                      <Label htmlFor="designation">Designation</Label>
-                      <Input id="designation" placeholder="Technician" disabled />
-                  </div>
-                  <div className="grid gap-2">
                       <Label htmlFor="password">Password</Label>
                       <Input id="password" type="password" {...register("password")} />
                       {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+                  </div>
+                  <div className="grid gap-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
+                      {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
                   </div>
               </div>
           </CardContent>
@@ -159,3 +164,5 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+  

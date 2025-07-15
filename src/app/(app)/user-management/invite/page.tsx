@@ -29,6 +29,10 @@ const userSchema = z.object({
   department: z.string().optional(),
   roleId: z.string().min(1, "A role is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password confirmation is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
 });
 
 const inviteSchema = z.object({
@@ -171,29 +175,34 @@ export default function InviteUserPage() {
                             <Input id="department" placeholder="e.g., Field Services" {...register("department")} />
                         </div>
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Controller
+                            name="roleId"
+                            control={control}
+                            render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <SelectTrigger id="role">
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        {errors.roleId && <p className="text-red-500 text-sm">{errors.roleId.message as string}</p>}
+                    </div>
                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="role">Role</Label>
-                            <Controller
-                                name="roleId"
-                                control={control}
-                                render={({ field }) => (
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <SelectTrigger id="role">
-                                            <SelectValue placeholder="Select a role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            />
-                            {errors.roleId && <p className="text-red-500 text-sm">{errors.roleId.message as string}</p>}
-                        </div>
                         <div className="space-y-2">
                            <Label htmlFor="password">Password</Label>
                            <Input id="password" type="password" {...register("password")} />
                            {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
+                        </div>
+                        <div className="space-y-2">
+                           <Label htmlFor="confirmPassword">Confirm Password</Label>
+                           <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
+                           {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message as string}</p>}
                         </div>
                     </div>
                     
@@ -261,3 +270,5 @@ export default function InviteUserPage() {
     </div>
   );
 }
+
+  

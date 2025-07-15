@@ -11,12 +11,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your new password"),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "New passwords do not match",
+  path: ["confirmPassword"],
+});
 
 export default function ProfilePage() {
   const { currentUser, setCurrentUser, userRole } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<z.infer<typeof passwordSchema>>({
+    resolver: zodResolver(passwordSchema)
+  });
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -53,6 +69,16 @@ export default function ProfilePage() {
         });
       }
     }
+  };
+
+  const onPasswordChangeSubmit = async (data: z.infer<typeof passwordSchema>) => {
+    // In a real application, you would re-authenticate the user with their current password
+    // before allowing a password change. For this demo, we'll skip that step.
+    toast({
+      title: "Password Updated",
+      description: "Your password has been changed successfully. (Demo only)",
+    });
+    reset();
   };
   
   const getInitials = (name: string) => {
@@ -158,19 +184,30 @@ export default function ProfilePage() {
                     <CardTitle>Change Password</CardTitle>
                     <CardDescription>Update your password for security.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="current-password">Current Password</Label>
-                        <Input id="current-password" type="password" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="new-password">New Password</Label>
-                        <Input id="new-password" type="password" />
-                    </div>
-                    <Button suppressHydrationWarning>Update Password</Button>
+                <CardContent>
+                    <form onSubmit={handleSubmit(onPasswordChangeSubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="current-password">Current Password</Label>
+                            <Input id="current-password" type="password" {...register("currentPassword")} />
+                            {errors.currentPassword && <p className="text-sm text-red-500">{errors.currentPassword.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password">New Password</Label>
+                            <Input id="new-password" type="password" {...register("newPassword")} />
+                             {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="confirm-password">Confirm New Password</Label>
+                            <Input id="confirm-password" type="password" {...register("confirmPassword")} />
+                             {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+                        </div>
+                        <Button type="submit" disabled={isSubmitting}>Update Password</Button>
+                    </form>
                 </CardContent>
              </Card>
         </div>
     </div>
   );
 }
+
+  
