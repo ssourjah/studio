@@ -14,49 +14,28 @@ import { Sun, Moon, Laptop, Type, Palette, Paintbrush } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { hexToHsl, hslToHex } from '@/lib/utils';
 
-function HSLColorPicker({ label, color, onChange }: { label: string, color: string, onChange: (value: string) => void }) {
-    const [h, s, l] = color.split(' ').map(v => parseInt(v, 10));
 
-    const handleHueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(`${e.target.value} ${s}% ${l}%`);
-    };
-    
-    const handleSaturationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(`${h} ${e.target.value}% ${l}%`);
-    };
+function ColorPicker({ label, color, onChange }: { label: string, color: string, onChange: (value: string) => void }) {
+    const hexColor = hslToHex(color);
 
-    const handleLightnessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-         onChange(`${h} ${s}% ${e.target.value}%`);
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newHex = e.target.value;
+        const newHsl = hexToHsl(newHex);
+        onChange(newHsl);
     };
 
     return (
-        <div className="space-y-3">
-            <div className="flex items-center justify-between">
-                <Label className="text-sm">{label}</Label>
-                <div 
-                    className="h-6 w-10 rounded border" 
-                    style={{ backgroundColor: `hsl(${h}, ${s}%, ${l}%)` }}
-                />
-            </div>
-            <div className='space-y-2'>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 text-xs font-medium">H</span>
-                    <Input type="range" min="0" max="360" value={h} onChange={handleHueChange} className="p-0 h-2" />
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 text-xs font-medium">S</span>
-                    <Input type="range" min="0" max="100" value={s} onChange={handleSaturationChange} className="p-0 h-2" />
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 text-xs font-medium">L</span>
-                    <Input type="range" min="0" max="100" value={l} onChange={handleLightnessChange} className="p-0 h-2" />
-                </div>
+        <div className="space-y-2">
+            <Label className="text-sm">{label}</Label>
+            <div className="flex items-center gap-2">
+                <Input type="color" value={hexColor} onChange={handleColorChange} className="h-10 w-12 p-1" />
+                <Input type="text" value={hexColor.toUpperCase()} onChange={handleColorChange} className="h-10" />
             </div>
         </div>
     );
 }
-
 
 export default function PreferencesPage() {
     const { currentUser, setCurrentUser } = useAuth();
@@ -272,20 +251,20 @@ export default function PreferencesPage() {
                         </TabsList>
                         <TabsContent value="light_theme" className="pt-4">
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <HSLColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
-                                <HSLColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
-                                <HSLColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
-                                <HSLColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
-                                <HSLColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
+                                <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
+                                <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
+                                <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
+                                <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
+                                <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
                             </div>
                         </TabsContent>
                         <TabsContent value="dark_theme" className="pt-4">
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <HSLColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} />
-                                <HSLColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} />
-                                <HSLColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} />
-                                <HSLColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
-                                <HSLColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
+                                <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} />
+                                <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} />
+                                <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} />
+                                <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
+                                <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
                             </div>
                         </TabsContent>
                     </Tabs>
