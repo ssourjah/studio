@@ -38,7 +38,7 @@ service cloud.firestore {
     }
 
     match /roles/{roleId} {
-      allow read: if isAuth() && hasPermission('administrator', 'read');
+      allow read: if isAuth();
       allow write: if isAuth() && (hasPermission('administrator', 'create') || hasPermission('administrator', 'edit'));
       allow delete: if isAuth() && hasPermission('administrator', 'delete');
     }
