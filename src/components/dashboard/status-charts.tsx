@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
@@ -13,14 +14,14 @@ interface StatusChartsProps {
 
 export function StatusCharts({ tasks }: StatusChartsProps) {
   const chartConfig = {
-      Completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
-      Incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+      Completed: { label: 'Completed', color: 'hsl(142.1 76.2% 36.3%)' }, // green-600
+      Incomplete: { label: 'Incomplete', color: 'hsl(30 90% 50%)' }, // orange-500
       Cancelled: { label: 'Cancelled', color: 'hsl(var(--destructive))' },
   };
 
   const statusPieChartConfig = {
-    completed: { label: 'Completed', color: 'hsl(var(--chart-2))' },
-    incomplete: { label: 'Incomplete', color: 'hsl(var(--chart-4))' },
+    completed: { label: 'Completed', color: 'hsl(142.1 76.2% 36.3%)' },
+    incomplete: { label: 'Incomplete', color: 'hsl(30 90% 50%)' },
     cancelled: { label: 'Cancelled', color: 'hsl(var(--destructive))' },
   };
 
@@ -36,9 +37,9 @@ export function StatusCharts({ tasks }: StatusChartsProps) {
     }, {} as Record<string, number>);
 
     const pieData = [
-      { name: 'Completed', value: statusCounts['Completed'] || 0, fill: 'var(--color-completed)' },
-      { name: 'Incomplete', value: statusCounts['Incomplete'] || 0, fill: 'var(--color-incomplete)' },
-      { name: 'Cancelled', value: statusCounts['Cancelled'] || 0, fill: 'var(--color-cancelled)' },
+      { name: 'Completed', value: statusCounts['Completed'] || 0, fill: 'var(--color-Completed)' },
+      { name: 'Incomplete', value: statusCounts['Incomplete'] || 0, fill: 'var(--color-Incomplete)' },
+      { name: 'Cancelled', value: statusCounts['Cancelled'] || 0, fill: 'var(--color-Cancelled)' },
     ];
     
     // Daily
@@ -104,7 +105,7 @@ export function StatusCharts({ tasks }: StatusChartsProps) {
             <CardDescription>A breakdown of tasks by their current status.</CardDescription>
             </CardHeader>
             <CardContent>
-            <ChartContainer config={statusPieChartConfig} className="mx-auto aspect-square h-[250px]">
+            <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
                 <PieChart>
                 <ChartTooltip
                     cursor={false}
