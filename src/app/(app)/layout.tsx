@@ -33,7 +33,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 const userMenuItems = [
   { href: '/profile', label: 'Profile', icon: UserIcon },
   { href: '/preferences', label: 'Preferences', icon: Palette },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const managementMenuItems = [
@@ -172,3 +171,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+    
