@@ -562,7 +562,7 @@ export default function AdministratorPage() {
     const canReadSettings = userRole?.permissions.settings?.read ?? false;
 
   return (
-    <Tabs defaultValue="roles" className="space-y-4">
+    <Tabs defaultValue={canReadRoles ? "roles" : "settings"} className="space-y-4">
         <TabsList>
             {canReadRoles && <TabsTrigger value="roles">Role Management</TabsTrigger>}
             {canReadSettings && <TabsTrigger value="settings">Application Settings</TabsTrigger>}
