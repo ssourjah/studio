@@ -38,19 +38,19 @@ function ColorPicker({ label, color, onChange }: { label: string, color: string,
 }
 
 const defaultLight: ColorTheme = {
-    background: '240 10% 96%',
-    foreground: '222 47% 11%',
+    background: '0 0% 100%',
+    foreground: '222.2 84% 4.9%',
     card: '0 0% 100%',
-    primary: '236 41% 48%',
-    accent: '240 5% 90%',
+    primary: '222.2 47.4% 11.2%',
+    accent: '210 40% 96.1%',
 };
 
 const defaultDark: ColorTheme = {
-    background: '222 47% 11%',
+    background: '222.2 84% 4.9%',
     foreground: '210 40% 98%',
-    card: '222 47% 11%',
-    primary: '236 41% 48%',
-    accent: '217 33% 17%',
+    card: '222.2 84% 4.9%',
+    primary: '210 40% 98%',
+    accent: '217.2 32.6% 17.5%',
 };
 
 export default function PreferencesPage() {
@@ -69,7 +69,10 @@ export default function PreferencesPage() {
             if (theme) setSelectedTheme(theme);
             if (fontSize) setSelectedFontSize(fontSize);
             if (customLightTheme) setLightThemeColors(customLightTheme);
+            else setLightThemeColors(defaultLight);
+
             if (customDarkTheme) setDarkThemeColors(customDarkTheme);
+            else setDarkThemeColors(defaultDark)
         }
     }, [currentUser]);
 
@@ -94,20 +97,27 @@ export default function PreferencesPage() {
         
         // Cleanup function to remove the preview styles when the user navigates away without saving
         return () => {
-            const originalTheme = currentUser?.preferences;
-            if (originalTheme) {
-                 const lightVars = originalTheme.customLightTheme ? Object.entries(originalTheme.customLightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-                 const darkVars = originalTheme.customDarkTheme ? Object.entries(originalTheme.customDarkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-                 if (styleElement) {
-                     styleElement.innerHTML = `
-                        :root { ${lightVars} }
-                        .dark { ${darkVars} }
-                     `;
-                 }
+            if (currentUser?.preferences) {
+                applyThemeFromPreferences(currentUser.preferences);
             }
         };
 
     }, [lightThemeColors, darkThemeColors, currentUser?.preferences]);
+
+    const applyThemeFromPreferences = (preferences: UserPreferences) => {
+        const styleId = 'custom-theme-preview';
+        let styleElement = document.getElementById(styleId);
+        if (!styleElement) return;
+
+        const { customLightTheme, customDarkTheme } = preferences;
+        const lightVars = customLightTheme ? Object.entries(customLightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : Object.entries(defaultLight).map(([key, value]) => `--${key}: ${value};`).join(' ');
+        const darkVars = customDarkTheme ? Object.entries(customDarkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : Object.entries(defaultDark).map(([key, value]) => `--${key}: ${value};`).join(' ');
+
+        styleElement.innerHTML = `
+            :root { ${lightVars} }
+            .dark { ${darkVars} }
+        `;
+    }
 
     const applyTheme = (theme: ThemePreference) => {
         localStorage.setItem('theme', theme);

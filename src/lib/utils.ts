@@ -6,7 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function hslToHex(hslString: string): string {
-  const [h, s, l] = hslString.split(' ').map(v => parseFloat(v));
+  if (!hslString || typeof hslString !== 'string') {
+    return '#000000';
+  }
+  const parts = hslString.split(' ').map(v => parseFloat(v));
+  if (parts.length < 3 || parts.some(isNaN)) {
+    return '#000000';
+  }
+  const [h, s, l] = parts;
+  
   const sPercentage = s / 100;
   const lPercentage = l / 100;
 
@@ -43,6 +51,9 @@ export function hslToHex(hslString: string): string {
 }
 
 export function hexToHsl(hex: string): string {
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) {
+      return '0 0% 0%';
+    }
     let r = 0, g = 0, b = 0;
     if (hex.length == 4) {
         r = parseInt(hex[1] + hex[1], 16);
