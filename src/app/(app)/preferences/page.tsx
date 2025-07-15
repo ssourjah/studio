@@ -15,14 +15,29 @@ import { Sun, Moon, Laptop } from 'lucide-react';
 export default function PreferencesPage() {
     const { currentUser, setCurrentUser } = useAuth();
     const { toast } = useToast();
-    const [theme, setTheme] = useState<ThemePreference>('system');
+    const [selectedTheme, setSelectedTheme] = useState<ThemePreference>('system');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (currentUser?.preferences?.theme) {
-            setTheme(currentUser.preferences.theme);
+            setSelectedTheme(currentUser.preferences.theme);
         }
     }, [currentUser]);
+
+    const applyTheme = (theme: ThemePreference) => {
+        document.documentElement.classList.remove('light', 'dark');
+        if (theme === 'system') {
+            const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.add(systemIsDark ? 'dark' : 'light');
+        } else {
+            document.documentElement.classList.add(theme);
+        }
+    };
+    
+    const handleThemeChange = (theme: ThemePreference) => {
+        setSelectedTheme(theme);
+        applyTheme(theme);
+    };
 
     const handleSave = async () => {
         if (!currentUser) return;
@@ -30,7 +45,7 @@ export default function PreferencesPage() {
         const userDocRef = doc(db, 'users', currentUser.id);
         
         try {
-            const newPreferences = { ...currentUser.preferences, theme };
+            const newPreferences = { ...currentUser.preferences, theme: selectedTheme };
             await updateDoc(userDocRef, { preferences: newPreferences });
 
             // Optimistically update local user state
@@ -66,8 +81,8 @@ export default function PreferencesPage() {
                         <Label className="text-base">Theme</Label>
                         <p className="text-sm text-muted-foreground">Select the color scheme for the application.</p>
                         <RadioGroup
-                            value={theme}
-                            onValueChange={(value: ThemePreference) => setTheme(value)}
+                            value={selectedTheme}
+                            onValueChange={handleThemeChange}
                             className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
                         >
                             <div>
