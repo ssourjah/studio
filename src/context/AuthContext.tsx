@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      setLoading(true); // Start loading whenever auth state changes
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (userSnap) => {
@@ -33,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = { id: userSnap.id, ...userSnap.data() } as User;
             setCurrentUser(userData);
 
-            // Apply theme from user preferences
+            // Apply theme from user preferences, defaulting to 'system'
             const theme = userData.preferences?.theme || 'system';
             document.documentElement.classList.remove('light', 'dark');
             if (theme === 'system') {
@@ -51,21 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                   setUserRole(null);
                 }
-                setLoading(false);
-              });
+                setLoading(false); // Stop loading after role is fetched
+              }, () => setLoading(false)); // Stop loading on role fetch error
               return () => unsubscribeRole();
             } else {
               setUserRole(null);
-              setLoading(false);
+              setLoading(false); // Stop loading if no roleId
             }
           } else {
-            // User in Auth but not Firestore. Log them out.
+            // User in Auth but not Firestore. Treat as logged out.
             setCurrentUser(null);
             setUserRole(null);
             setLoading(false);
           }
-        }, (error) => {
-            console.error("Error in user snapshot listener:", error);
+        }, () => {
+            // Error fetching user document
             setCurrentUser(null);
             setUserRole(null);
             setLoading(false);
