@@ -1,0 +1,112 @@
+
+'use client';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { ThemePreference } from '@/lib/types';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Sun, Moon, Laptop } from 'lucide-react';
+
+export default function PreferencesPage() {
+    const { currentUser, setCurrentUser } = useAuth();
+    const { toast } = useToast();
+    const [theme, setTheme] = useState<ThemePreference>('system');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (currentUser?.preferences?.theme) {
+            setTheme(currentUser.preferences.theme);
+        }
+    }, [currentUser]);
+
+    const handleSave = async () => {
+        if (!currentUser) return;
+        setIsSaving(true);
+        const userDocRef = doc(db, 'users', currentUser.id);
+        
+        try {
+            const newPreferences = { ...currentUser.preferences, theme };
+            await updateDoc(userDocRef, { preferences: newPreferences });
+
+            // Optimistically update local user state
+            setCurrentUser({ ...currentUser, preferences: newPreferences });
+
+            toast({
+                title: 'Preferences Saved',
+                description: 'Your new settings have been applied.',
+            });
+        } catch (error) {
+            console.error("Error saving preferences: ", error);
+            toast({
+                title: 'Error',
+                description: 'Could not save your preferences.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Appearance</CardTitle>
+                    <CardDescription>
+                        Customize the look and feel of the application to your liking.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div className="space-y-4">
+                        <Label className="text-base">Theme</Label>
+                        <p className="text-sm text-muted-foreground">Select the color scheme for the application.</p>
+                        <RadioGroup
+                            value={theme}
+                            onValueChange={(value: ThemePreference) => setTheme(value)}
+                            className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
+                        >
+                            <div>
+                                <RadioGroupItem value="light" id="light" className="peer sr-only" />
+                                <Label
+                                    htmlFor="light"
+                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                >
+                                    <Sun className="mb-3 h-6 w-6" />
+                                    Light
+                                </Label>
+                            </div>
+                             <div>
+                                <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+                                <Label
+                                    htmlFor="dark"
+                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                >
+                                    <Moon className="mb-3 h-6 w-6" />
+                                    Dark
+                                </Label>
+                            </div>
+                             <div>
+                                <RadioGroupItem value="system" id="system" className="peer sr-only" />
+                                <Label
+                                    htmlFor="system"
+                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                >
+                                    <Laptop className="mb-3 h-6 w-6" />
+                                    System
+                                </Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                     <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Preferences'}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -27,14 +27,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // User is logged in, set up Firestore listener for their profile.
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (userSnap) => {
           if (userSnap.exists()) {
             const userData = { id: userSnap.id, ...userSnap.data() } as User;
             setCurrentUser(userData);
 
-            // Once we have the user data, set up the role listener.
+            // Apply theme from user preferences
+            const theme = userData.preferences?.theme || 'system';
+            document.documentElement.classList.remove('light', 'dark');
+            if (theme === 'system') {
+                const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.add(systemIsDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.classList.add(theme);
+            }
+
             if (userData.roleId) {
               const roleDocRef = doc(db, 'roles', userData.roleId);
               const unsubscribeRole = onSnapshot(roleDocRef, (roleSnap) => {
@@ -43,15 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                   setUserRole(null);
                 }
-                setLoading(false); // Done loading after user and role are fetched.
+                setLoading(false);
               });
               return () => unsubscribeRole();
             } else {
-              // No role ID, so no role to fetch.
               setUserRole(null);
               setLoading(false);
             }
-
           } else {
             // User in Auth but not Firestore. Log them out.
             setCurrentUser(null);
@@ -66,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return () => unsubscribeUser();
       } else {
-        // User is logged out. Clear all data.
+        // User is logged out.
         setCurrentUser(null);
         setUserRole(null);
         setLoading(false);

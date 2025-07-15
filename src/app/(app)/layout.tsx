@@ -21,6 +21,7 @@ import {
   ChevronDown,
   FileSpreadsheet,
   LayoutDashboard,
+  Palette,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const userMenuItems = [
   { href: '/profile', label: 'Profile', icon: UserIcon },
+  { href: '/preferences', label: 'Preferences', icon: Palette },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -48,8 +50,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, userRole, loading, logout } = useAuth();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-
-  console.log(loading, currentUser?.name)
 
   useEffect(() => {
     setIsClient(true);

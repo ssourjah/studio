@@ -22,6 +22,11 @@ export type Task = {
 export type UserStatus = 'Active' | 'Pending' | 'Suspended';
 export type AccessLevel = 'Admin' | 'Support' | 'Technician' | 'Manager';
 
+export type ThemePreference = 'light' | 'dark' | 'system';
+
+export interface UserPreferences {
+    theme: ThemePreference;
+}
 
 export type User = {
     id: string;
@@ -35,6 +40,7 @@ export type User = {
     accessLevel: AccessLevel; // Will be deprecated, but keep for now
     status: UserStatus;
     avatarUrl?: string;
+    preferences?: UserPreferences;
 };
 
 export type Permission = {
