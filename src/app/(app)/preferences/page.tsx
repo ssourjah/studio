@@ -10,14 +10,15 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ThemePreference, FontSizePreference, UserPreferences, ColorTheme } from '@/lib/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Sun, Moon, Laptop, Type, Palette, Paintbrush, Undo2 } from 'lucide-react';
+import { Sun, Moon, Laptop, Type, Palette, Paintbrush, Undo2, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { hexToHsl, hslToHex } from '@/lib/utils';
+import { useSettings } from '@/context/SettingsContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
-function ColorPicker({ label, color, onChange }: { label: string, color: string, onChange: (value: string) => void }) {
+function ColorPicker({ label, color, onChange, disabled }: { label: string, color: string, onChange: (value: string) => void, disabled?: boolean }) {
     const hexColor = hslToHex(color);
 
     const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,8 +31,8 @@ function ColorPicker({ label, color, onChange }: { label: string, color: string,
         <div className="space-y-2">
             <Label className="text-sm">{label}</Label>
             <div className="flex items-center gap-2">
-                <Input type="color" value={hexColor} onChange={handleColorChange} className="h-10 w-12 p-1" />
-                <Input type="text" value={hexColor.toUpperCase()} onChange={handleColorChange} className="h-10" />
+                <Input type="color" value={hexColor} onChange={handleColorChange} className="h-10 w-12 p-1" disabled={disabled} />
+                <Input type="text" value={hexColor.toUpperCase()} onChange={handleColorChange} className="h-10" disabled={disabled} />
             </div>
         </div>
     );
@@ -55,7 +56,14 @@ const defaultDark: ColorTheme = {
 
 export default function PreferencesPage() {
     const { currentUser, setCurrentUser } = useAuth();
+    const { 
+        customLightTheme, customDarkTheme, 
+        setCustomLightTheme, setCustomDarkTheme,
+        loading: settingsLoading
+    } = useSettings();
     const { toast } = useToast();
+    const { userRole } = useAuth();
+
     const [selectedTheme, setSelectedTheme] = useState<ThemePreference>('system');
     const [selectedFontSize, setSelectedFontSize] = useState<FontSizePreference>('base');
     const [isSaving, setIsSaving] = useState(false);
@@ -63,18 +71,19 @@ export default function PreferencesPage() {
     const [lightThemeColors, setLightThemeColors] = useState<ColorTheme>(defaultLight);
     const [darkThemeColors, setDarkThemeColors] = useState<ColorTheme>(defaultDark);
 
+    const canEditAppearance = userRole?.permissions.settings?.edit ?? false;
+
     useEffect(() => {
         if (currentUser?.preferences) {
-            const { theme, fontSize, customLightTheme, customDarkTheme } = currentUser.preferences;
+            const { theme, fontSize } = currentUser.preferences;
             if (theme) setSelectedTheme(theme);
             if (fontSize) setSelectedFontSize(fontSize);
-            if (customLightTheme) setLightThemeColors(customLightTheme);
-            else setLightThemeColors(defaultLight);
-
-            if (customDarkTheme) setDarkThemeColors(customDarkTheme);
-            else setDarkThemeColors(defaultDark)
         }
-    }, [currentUser]);
+        if (!settingsLoading) {
+            setLightThemeColors(customLightTheme || defaultLight);
+            setDarkThemeColors(customDarkTheme || defaultDark);
+        }
+    }, [currentUser, customLightTheme, customDarkTheme, settingsLoading]);
 
     // Effect for real-time theme preview
     useEffect(() => {
@@ -95,29 +104,7 @@ export default function PreferencesPage() {
             .dark { ${darkVars} }
         `;
         
-        // Cleanup function to remove the preview styles when the user navigates away without saving
-        return () => {
-            if (currentUser?.preferences) {
-                applyThemeFromPreferences(currentUser.preferences);
-            }
-        };
-
-    }, [lightThemeColors, darkThemeColors, currentUser?.preferences]);
-
-    const applyThemeFromPreferences = (preferences: UserPreferences) => {
-        const styleId = 'custom-theme-preview';
-        let styleElement = document.getElementById(styleId);
-        if (!styleElement) return;
-
-        const { customLightTheme, customDarkTheme } = preferences;
-        const lightVars = customLightTheme ? Object.entries(customLightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : Object.entries(defaultLight).map(([key, value]) => `--${key}: ${value};`).join(' ');
-        const darkVars = customDarkTheme ? Object.entries(customDarkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : Object.entries(defaultDark).map(([key, value]) => `--${key}: ${value};`).join(' ');
-
-        styleElement.innerHTML = `
-            :root { ${lightVars} }
-            .dark { ${darkVars} }
-        `;
-    }
+    }, [lightThemeColors, darkThemeColors]);
 
     const applyTheme = (theme: ThemePreference) => {
         localStorage.setItem('theme', theme);
@@ -149,21 +136,24 @@ export default function PreferencesPage() {
     const handleSave = async () => {
         if (!currentUser) return;
         setIsSaving(true);
-        const userDocRef = doc(db, 'users', currentUser.id);
         
         try {
+            // Save user-specific preferences (theme choice, font size)
+            const userDocRef = doc(db, 'users', currentUser.id);
             const newPreferences: UserPreferences = { 
                 ...currentUser.preferences, 
                 theme: selectedTheme,
                 fontSize: selectedFontSize,
-                customLightTheme: lightThemeColors,
-                customDarkTheme: darkThemeColors
             };
             await updateDoc(userDocRef, { preferences: newPreferences });
-
-            // Optimistically update local user state
             setCurrentUser({ ...currentUser, preferences: newPreferences });
             
+            // Save global theme colors if user has permission
+            if (canEditAppearance) {
+                await setCustomLightTheme(lightThemeColors);
+                await setCustomDarkTheme(darkThemeColors);
+            }
+
             // Also update local storage upon saving
             localStorage.setItem('theme', selectedTheme);
             localStorage.setItem('fontSize', selectedFontSize);
@@ -188,94 +178,95 @@ export default function PreferencesPage() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Appearance</CardTitle>
+                    <CardTitle>Display Preferences</CardTitle>
                     <CardDescription>
-                        Customize the look and feel of the application to your liking.
+                        Customize your personal view of the application.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
-                    <div className="space-y-4">
-                        <Label className="text-base">Theme</Label>
-                        <p className="text-sm text-muted-foreground">Select the color scheme for the application.</p>
-                        <RadioGroup
-                            value={selectedTheme}
-                            onValueChange={handleThemeChange}
-                            className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
-                        >
-                            <div>
-                                <RadioGroupItem value="light" id="light" className="peer sr-only" />
-                                <Label
-                                    htmlFor="light"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Sun className="mb-3 h-6 w-6" />
-                                    Light
-                                </Label>
-                            </div>
-                             <div>
-                                <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
-                                <Label
-                                    htmlFor="dark"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Moon className="mb-3 h-6 w-6" />
-                                    Dark
-                                </Label>
-                            </div>
-                             <div>
-                                <RadioGroupItem value="system" id="system" className="peer sr-only" />
-                                <Label
-                                    htmlFor="system"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Laptop className="mb-3 h-6 w-6" />
-                                    System
-                                </Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
+                    <fieldset disabled={isSaving}>
+                        <div className="space-y-4">
+                            <Label className="text-base">Theme</Label>
+                            <p className="text-sm text-muted-foreground">Select the color scheme for the application.</p>
+                            <RadioGroup
+                                value={selectedTheme}
+                                onValueChange={handleThemeChange}
+                                className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
+                            >
+                                <div>
+                                    <RadioGroupItem value="light" id="light" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="light"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Sun className="mb-3 h-6 w-6" />
+                                        Light
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="dark"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Moon className="mb-3 h-6 w-6" />
+                                        Dark
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="system" id="system" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="system"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Laptop className="mb-3 h-6 w-6" />
+                                        System
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
 
-                    <div className="space-y-4">
-                        <Label className="text-base">Font Size</Label>
-                        <p className="text-sm text-muted-foreground">Adjust the text size for readability.</p>
-                         <RadioGroup
-                            value={selectedFontSize}
-                            onValueChange={handleFontSizeChange}
-                            className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
-                        >
-                             <div>
-                                <RadioGroupItem value="sm" id="sm" className="peer sr-only" />
-                                <Label
-                                    htmlFor="sm"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Type className="mb-3 h-6 w-6" />
-                                    <span className="text-sm">Small</span>
-                                </Label>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="base" id="base" className="peer sr-only" />
-                                <Label
-                                    htmlFor="base"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Type className="mb-3 h-6 w-6" />
-                                    <span className="text-base">Medium</span>
-                                </Label>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="lg" id="lg" className="peer sr-only" />
-                                <Label
-                                    htmlFor="lg"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                                >
-                                    <Type className="mb-3 h-6 w-6" />
-                                    <span className="text-lg">Large</span>
-                                </Label>
-                            </div>
-                         </RadioGroup>
-                    </div>
-
+                        <div className="space-y-4">
+                            <Label className="text-base">Font Size</Label>
+                            <p className="text-sm text-muted-foreground">Adjust the text size for readability.</p>
+                            <RadioGroup
+                                value={selectedFontSize}
+                                onValueChange={handleFontSizeChange}
+                                className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
+                            >
+                                <div>
+                                    <RadioGroupItem value="sm" id="sm" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="sm"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Type className="mb-3 h-6 w-6" />
+                                        <span className="text-sm">Small</span>
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="base" id="base" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="base"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Type className="mb-3 h-6 w-6" />
+                                        <span className="text-base">Medium</span>
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="lg" id="lg" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="lg"
+                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                                    >
+                                        <Type className="mb-3 h-6 w-6" />
+                                        <span className="text-lg">Large</span>
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    </fieldset>
                 </CardContent>
             </Card>
 
@@ -283,45 +274,57 @@ export default function PreferencesPage() {
                 <CardHeader>
                     <div className='flex items-center gap-2'>
                         <Palette className="h-6 w-6" />
-                        <CardTitle>Theme Customization</CardTitle>
+                        <CardTitle>Global Theme Customization</CardTitle>
                     </div>
                     <CardDescription>
-                        Fine-tune the colors for light and dark themes. Changes are applied instantly.
+                        Fine-tune the colors for light and dark themes. Changes are applied instantly for preview.
+                        {!canEditAppearance && ' (Read-only)'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="light_theme">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="light_theme"><Sun className="mr-2 h-4 w-4" />Light Theme</TabsTrigger>
-                            <TabsTrigger value="dark_theme"><Moon className="mr-2 h-4 w-4" />Dark Theme</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="light_theme" className="pt-4">
-                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
-                                <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
-                                <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
-                                <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
-                                <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
-                            </div>
-                             <Button variant="outline" className="mt-6" onClick={() => setLightThemeColors(defaultLight)}>
-                                <Undo2 className="mr-2 h-4 w-4" />
-                                Reset to Default
-                            </Button>
-                        </TabsContent>
-                        <TabsContent value="dark_theme" className="pt-4">
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} />
-                                <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} />
-                                <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} />
-                                <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
-                                <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
-                            </div>
-                             <Button variant="outline" className="mt-6" onClick={() => setDarkThemeColors(defaultDark)}>
-                                <Undo2 className="mr-2 h-4 w-4" />
-                                Reset to Default
-                            </Button>
-                        </TabsContent>
-                    </Tabs>
+                    {!canEditAppearance && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Permission Denied</AlertTitle>
+                            <AlertDescription>
+                                You do not have permission to edit application-wide theme settings. Your changes here are for preview only and will not be saved.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <fieldset disabled={isSaving}>
+                        <Tabs defaultValue="light_theme">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="light_theme"><Sun className="mr-2 h-4 w-4" />Light Theme</TabsTrigger>
+                                <TabsTrigger value="dark_theme"><Moon className="mr-2 h-4 w-4" />Dark Theme</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="light_theme" className="pt-4">
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} disabled={!canEditAppearance} />
+                                </div>
+                                <Button variant="outline" className="mt-6" onClick={() => setLightThemeColors(defaultLight)} disabled={!canEditAppearance}>
+                                    <Undo2 className="mr-2 h-4 w-4" />
+                                    Reset to Default
+                                </Button>
+                            </TabsContent>
+                            <TabsContent value="dark_theme" className="pt-4">
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} disabled={!canEditAppearance} />
+                                </div>
+                                <Button variant="outline" className="mt-6" onClick={() => setDarkThemeColors(defaultDark)} disabled={!canEditAppearance}>
+                                    <Undo2 className="mr-2 h-4 w-4" />
+                                    Reset to Default
+                                </Button>
+                            </TabsContent>
+                        </Tabs>
+                    </fieldset>
                 </CardContent>
             </Card>
 
@@ -331,6 +334,4 @@ export default function PreferencesPage() {
             </Button>
         </div>
     );
-
-    
 }

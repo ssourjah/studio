@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import type { User, Role, UserPreferences } from '@/lib/types';
+import type { User, Role } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -17,26 +17,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-function applyCustomTheme(preferences: UserPreferences) {
-    const styleId = 'custom-user-theme';
-    let styleElement = document.getElementById(styleId);
-
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-    }
-    
-    const { customLightTheme, customDarkTheme } = preferences;
-    const lightVars = customLightTheme ? Object.entries(customLightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-    const darkVars = customDarkTheme ? Object.entries(customDarkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-
-    styleElement.innerHTML = `
-        :root { ${lightVars} }
-        .dark { ${darkVars} }
-    `;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -56,8 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Sync database preference with local storage and apply them
             const prefs = userData.preferences || {};
-            applyCustomTheme(prefs);
-
             const dbTheme = prefs.theme || 'system';
             if (localStorage.getItem('theme') !== dbTheme) {
               localStorage.setItem('theme', dbTheme);
@@ -109,14 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribeAuth();
   }, []);
-  
-  // Apply theme changes instantly when preferences change on the page
-  useEffect(() => {
-    if (currentUser?.preferences) {
-      applyCustomTheme(currentUser.preferences);
-    }
-  }, [currentUser?.preferences]);
-
 
   const logout = async () => {
     await auth.signOut();
