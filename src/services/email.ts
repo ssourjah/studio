@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-const settingsDocRef = doc(db, 'settings', 'company');
+const adminSettingsDocRef = doc(db, 'settings', 'admin');
 
 interface EmailOptions {
     to: string;
@@ -13,7 +13,7 @@ interface EmailOptions {
 }
 
 async function getSmtpConfig() {
-    const docSnap = await getDoc(settingsDocRef);
+    const docSnap = await getDoc(adminSettingsDocRef);
     if (docSnap.exists()) {
         const data = docSnap.data();
         return {

@@ -1,7 +1,7 @@
 
 'use client';
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface SmtpSettings {
@@ -27,7 +27,8 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-const settingsDocRef = doc(db, 'settings', 'company');
+const companySettingsDocRef = doc(db, 'settings', 'company');
+const adminSettingsDocRef = doc(db, 'settings', 'admin');
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
@@ -46,12 +47,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const fetchSettings = async () => {
             setLoading(true);
             try {
-                const docSnap = await getDoc(settingsDocRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+                // Fetch public company settings
+                const companyDocSnap = await getDoc(companySettingsDocRef);
+                if (companyDocSnap.exists()) {
+                    const data = companyDocSnap.data();
                     setCompanyNameState(data.companyName || 'TaskMaster Pro');
                     setLogoUrlLightState(data.logoUrlLight || null);
                     setLogoUrlDarkState(data.logoUrlDark || null);
+                }
+
+                // Fetch private admin settings
+                const adminDocSnap = await getDoc(adminSettingsDocRef);
+                if (adminDocSnap.exists()) {
+                    const data = adminDocSnap.data();
                     setDisableAdminLoginState(data.disableAdminLogin || false);
                     setSmtpSettingsState({
                         smtpHost: data.smtpHost || '',
@@ -61,7 +69,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                     });
                 }
             } catch (error) {
-                console.error("Error fetching company settings:", error);
+                console.error("Error fetching settings:", error);
             } finally {
                 setLoading(false);
             }
@@ -72,27 +80,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const setCompanyName = async (name: string) => {
         setCompanyNameState(name);
-        await setDoc(settingsDocRef, { companyName: name }, { merge: true });
+        await setDoc(companySettingsDocRef, { companyName: name }, { merge: true });
     };
 
     const setLogoUrlLight = async (url: string | null) => {
         setLogoUrlLightState(url);
-        await setDoc(settingsDocRef, { logoUrlLight: url }, { merge: true });
+        await setDoc(companySettingsDocRef, { logoUrlLight: url }, { merge: true });
     };
 
     const setLogoUrlDark = async (url: string | null) => {
         setLogoUrlDarkState(url);
-        await setDoc(settingsDocRef, { logoUrlDark: url }, { merge: true });
+        await setDoc(companySettingsDocRef, { logoUrlDark: url }, { merge: true });
     };
 
     const setDisableAdminLogin = async (disabled: boolean) => {
         setDisableAdminLoginState(disabled);
-        await setDoc(settingsDocRef, { disableAdminLogin: disabled }, { merge: true });
+        await setDoc(adminSettingsDocRef, { disableAdminLogin: disabled }, { merge: true });
     };
     
     const setSmtpSettings = async (settings: SmtpSettings) => {
         setSmtpSettingsState(settings);
-        await updateDoc(settingsDocRef, { ...settings });
+        await setDoc(adminSettingsDocRef, settings, { merge: true });
     };
 
     const value = {
