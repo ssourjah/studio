@@ -18,7 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function applyCustomTheme(lightTheme: ColorTheme | null, darkTheme: ColorTheme | null) {
+function applyCustomTheme(lightTheme: Partial<ColorTheme> | null, darkTheme: Partial<ColorTheme> | null) {
     const styleId = 'user-custom-theme';
     let styleElement = document.getElementById(styleId);
 
@@ -29,14 +29,16 @@ function applyCustomTheme(lightTheme: ColorTheme | null, darkTheme: ColorTheme |
     }
     
     const lightVars = lightTheme ? Object.entries(lightTheme).map(([key, value]) => {
+        if (!value) return null;
         const cssVarName = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
         return `--${cssVarName}: ${value};`;
-    }).join(' ') : '';
+    }).filter(Boolean).join(' ') : '';
     
     const darkVars = darkTheme ? Object.entries(darkTheme).map(([key, value]) => {
+        if (!value) return null;
         const cssVarName = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
         return `--${cssVarName}: ${value};`;
-    }).join(' ') : '';
+    }).filter(Boolean).join(' ') : '';
 
 
     styleElement.innerHTML = `

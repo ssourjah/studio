@@ -72,8 +72,8 @@ export default function PreferencesPage() {
             const { theme, fontSize, customLightTheme, customDarkTheme } = currentUser.preferences;
             if (theme) setSelectedTheme(theme);
             if (fontSize) setSelectedFontSize(fontSize);
-            setLightThemeColors(customLightTheme || defaultLight);
-            setDarkThemeColors(customDarkTheme || defaultDark);
+            setLightThemeColors({ ...defaultLight, ...customLightTheme });
+            setDarkThemeColors({ ...defaultDark, ...customDarkTheme });
         }
     }, [currentUser]);
 
@@ -320,4 +320,3 @@ export default function PreferencesPage() {
         </div>
     );
 }
-
