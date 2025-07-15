@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BarChart3 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +14,8 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { AppLogo } from "@/components/app-logo";
+import { useSettings } from "@/context/SettingsContext";
 
 const registerSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -35,6 +36,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleId = searchParams.get('roleId');
+  const { companyName } = useSettings();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof registerSchema>>({
@@ -84,12 +86,10 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="flex items-center gap-3 text-foreground">
-        <div className="bg-primary p-3 rounded-lg">
-          <BarChart3 className="h-7 w-7 text-primary-foreground" />
-        </div>
-        <h1 className="text-3xl font-bold font-headline">TaskMaster Pro</h1>
-      </div>
+       <div className="flex flex-col items-center gap-3">
+          <AppLogo showName={false} />
+          <h1 className="text-3xl font-bold font-headline">{companyName}</h1>
+       </div>
       <Card className="w-full max-w-lg">
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardHeader>
