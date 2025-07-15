@@ -88,7 +88,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center gap-6">
        <div className="flex flex-col items-center gap-3">
-            <AppLogo showName={false} className="h-16 w-16" />
+            <AppLogo showName={false} className="h-20 w-20" />
             <h1 className="text-3xl font-bold font-headline">{companyName}</h1>
        </div>
       <Card className="w-full max-w-sm">
