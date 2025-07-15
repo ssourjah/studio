@@ -37,7 +37,8 @@ const services: { id: PermissionLevel; name: string; description: string }[] = [
     { id: 'taskManagement', name: 'Task Management', description: 'Manage all tasks across the system.' },
     { id: 'userManagement', name: 'User Management', description: 'Manage users, roles, and permissions.' },
     { id: 'reports', name: 'Task Reports', description: 'View and export task reports.' },
-    { id: 'administrator', name: 'Role Management', description: 'Create and manage user roles (this page).' },
+    { id: 'administrator', name: 'Role Management', description: 'Create and manage user roles.' },
+    { id: 'settings', name: 'Application Settings', description: 'Manage application-wide settings like branding and email.' },
 ];
 
 const initialPermissions = services.reduce((acc, service) => {
@@ -308,6 +309,7 @@ function AppSettingsTab() {
     loading 
   } = useSettings();
   const { toast } = useToast();
+  const { userRole } = useAuth();
 
   const [localCompanyName, setLocalCompanyName] = useState('');
   const [previewLogoUrlLight, setPreviewLogoUrlLight] = useState<string | null>(null);
@@ -321,6 +323,8 @@ function AppSettingsTab() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const canEditSettings = userRole?.permissions.settings?.edit ?? false;
 
   useEffect(() => {
     if (!loading) {
@@ -450,41 +454,43 @@ function AppSettingsTab() {
           <CardDescription>Update your company's details and branding.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" value={localCompanyName} onChange={(e) => setLocalCompanyName(e.target.value)} />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
+            <fieldset disabled={!canEditSettings || isSaving}>
                 <div className="space-y-2">
-                    <Label htmlFor="company-logo-light">Light Theme Logo</Label>
-                    <Input id="company-logo-light" type="file" onChange={(e) => handleLogoUpload(e, 'light')} accept="image/*" />
-                    <p className="text-sm text-muted-foreground">Best on light backgrounds. Transparent PNGs recommended.</p>
-                    {previewLogoUrlLight && (
-                      <div className="mt-4">
-                        <p className="text-sm font-medium">Preview:</p>
-                        <img src={previewLogoUrlLight} alt="Light Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-muted" />
-                      </div>
-                    )}
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input id="company-name" value={localCompanyName} onChange={(e) => setLocalCompanyName(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="company-logo-dark">Dark Theme Logo</Label>
-                    <Input id="company-logo-dark" type="file" onChange={(e) => handleLogoUpload(e, 'dark')} accept="image/*" />
-                    <p className="text-sm text-muted-foreground">Best on dark backgrounds. Transparent PNGs recommended.</p>
-                    {previewLogoUrlDark && (
-                      <div className="mt-4">
-                        <p className="text-sm font-medium">Preview:</p>
-                        <img src={previewLogoUrlDark} alt="Dark Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-card" />
-                      </div>
-                    )}
+
+                <Separator className="my-6" />
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="company-logo-light">Light Theme Logo</Label>
+                        <Input id="company-logo-light" type="file" onChange={(e) => handleLogoUpload(e, 'light')} accept="image/*" />
+                        <p className="text-sm text-muted-foreground">Best on light backgrounds. Transparent PNGs recommended.</p>
+                        {previewLogoUrlLight && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium">Preview:</p>
+                            <img src={previewLogoUrlLight} alt="Light Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-muted" />
+                          </div>
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="company-logo-dark">Dark Theme Logo</Label>
+                        <Input id="company-logo-dark" type="file" onChange={(e) => handleLogoUpload(e, 'dark')} accept="image/*" />
+                        <p className="text-sm text-muted-foreground">Best on dark backgrounds. Transparent PNGs recommended.</p>
+                        {previewLogoUrlDark && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium">Preview:</p>
+                            <img src={previewLogoUrlDark} alt="Dark Theme Logo Preview" className="h-16 w-auto mt-2 rounded-md border p-2 bg-card" />
+                          </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-            
-            <Button onClick={handleCompanyInfoSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Company Info'}
-            </Button>
+                
+                <Button onClick={handleCompanyInfoSave} disabled={isSaving || !canEditSettings} className="mt-6">
+                  {isSaving ? 'Saving...' : 'Save Company Info'}
+                </Button>
+            </fieldset>
         </CardContent>
       </Card>
 
@@ -494,27 +500,29 @@ function AppSettingsTab() {
           <CardDescription>Configure your outgoing email server to send registration invites.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="smtp-host">SMTP Host</Label>
-                    <Input id="smtp-host" placeholder="smtp.example.com" value={localSmtpSettings.smtpHost} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpHost: e.target.value}))} />
+            <fieldset disabled={!canEditSettings || isSaving}>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="smtp-host">SMTP Host</Label>
+                        <Input id="smtp-host" placeholder="smtp.example.com" value={localSmtpSettings.smtpHost} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpHost: e.target.value}))} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="smtp-port">SMTP Port</Label>
+                        <Input id="smtp-port" placeholder="587" value={localSmtpSettings.smtpPort} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPort: e.target.value}))} />
+                    </div>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="smtp-port">SMTP Port</Label>
-                    <Input id="smtp-port" placeholder="587" value={localSmtpSettings.smtpPort} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPort: e.target.value}))} />
+                    <Label htmlFor="smtp-user">Username</Label>
+                    <Input id="smtp-user" placeholder="user@example.com" value={localSmtpSettings.smtpUser} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpUser: e.target.value}))} />
                 </div>
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="smtp-user">Username</Label>
-                <Input id="smtp-user" placeholder="user@example.com" value={localSmtpSettings.smtpUser} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpUser: e.target.value}))} />
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="smtp-password">Password</Label>
-                <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
-            </div>
-            <div className="flex gap-2">
-                <Button onClick={handleSmtpSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save SMTP Settings'}</Button>
-            </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="smtp-password">Password</Label>
+                    <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
+                </div>
+                <div className="flex gap-2 mt-4">
+                    <Button onClick={handleSmtpSave} disabled={isSaving || !canEditSettings}>{isSaving ? 'Saving...' : 'Save SMTP Settings'}</Button>
+                </div>
+            </fieldset>
         </CardContent>
       </Card>
       
@@ -524,22 +532,24 @@ function AppSettingsTab() {
           <CardDescription>Manage administrator account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                    <Label htmlFor="disable-admin" className="text-base">Disable Default Admin</Label>
-                    <p className="text-sm text-muted-foreground">
-                        Disable the default 'admin@taskmaster.pro' user login.
-                    </p>
+            <fieldset disabled={!canEditSettings || isSaving}>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="disable-admin" className="text-base">Disable Default Admin</Label>
+                        <p className="text-sm text-muted-foreground">
+                            Disable the default 'admin@taskmaster.pro' user login.
+                        </p>
+                    </div>
+                    <Switch
+                        id="disable-admin"
+                        checked={localDisableAdminLogin}
+                        onCheckedChange={setLocalDisableAdminLogin}
+                    />
                 </div>
-                <Switch
-                    id="disable-admin"
-                    checked={localDisableAdminLogin}
-                    onCheckedChange={setLocalDisableAdminLogin}
-                />
-            </div>
-             <Button onClick={handleAdminSettingsSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Admin Settings'}
-             </Button>
+                 <Button onClick={handleAdminSettingsSave} disabled={isSaving || !canEditSettings} className="mt-4">
+                    {isSaving ? 'Saving...' : 'Save Admin Settings'}
+                 </Button>
+            </fieldset>
         </CardContent>
       </Card>
     </div>
@@ -547,18 +557,26 @@ function AppSettingsTab() {
 }
 
 export default function AdministratorPage() {
+    const { userRole } = useAuth();
+    const canReadRoles = userRole?.permissions.administrator?.read ?? false;
+    const canReadSettings = userRole?.permissions.settings?.read ?? false;
+
   return (
     <Tabs defaultValue="roles" className="space-y-4">
         <TabsList>
-            <TabsTrigger value="roles">Role Management</TabsTrigger>
-            <TabsTrigger value="settings">Application Settings</TabsTrigger>
+            {canReadRoles && <TabsTrigger value="roles">Role Management</TabsTrigger>}
+            {canReadSettings && <TabsTrigger value="settings">Application Settings</TabsTrigger>}
         </TabsList>
-        <TabsContent value="roles">
-            <RoleManagementTab />
-        </TabsContent>
-        <TabsContent value="settings">
-            <AppSettingsTab />
-        </TabsContent>
+        {canReadRoles && (
+            <TabsContent value="roles">
+                <RoleManagementTab />
+            </TabsContent>
+        )}
+        {canReadSettings && (
+            <TabsContent value="settings">
+                <AppSettingsTab />
+            </TabsContent>
+        )}
     </Tabs>
   );
 }

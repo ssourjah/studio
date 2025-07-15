@@ -42,6 +42,7 @@ const managementMenuItems = [
     { href: '/reports', label: 'Task Report', icon: FileSpreadsheet, permission: 'reports' },
     { href: '/user-management', label: 'User Management', icon: Users, permission: 'userManagement' },
     { href: '/administrator', label: 'Administrator', icon: Shield, permission: 'administrator' },
+    { href: '/administrator', label: 'Settings', icon: Settings, permission: 'settings' },
 ] as const;
 
 
@@ -141,7 +142,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     const canRead = userRole?.permissions[item.permission]?.read;
                     if (canRead) {
                         return (
-                            <DropdownMenuItem key={item.href} asChild>
+                            <DropdownMenuItem key={item.label} asChild>
                                 <Link href={item.href}>
                                     <item.icon className="mr-2 h-4 w-4" />
                                     {item.label}

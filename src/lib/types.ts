@@ -52,7 +52,7 @@ export type Permission = {
   delete: boolean;
 }
 
-export type PermissionLevel = 'dashboard' | 'tasks' | 'taskManagement' | 'userManagement' | 'reports' | 'administrator';
+export type PermissionLevel = 'dashboard' | 'tasks' | 'taskManagement' | 'userManagement' | 'reports' | 'administrator' | 'settings';
 
 export type Role = {
   id: string;
