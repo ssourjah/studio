@@ -36,6 +36,8 @@ export interface ColorTheme {
 export interface UserPreferences {
     theme?: ThemePreference;
     fontSize?: FontSizePreference;
+    customLightTheme?: ColorTheme;
+    customDarkTheme?: ColorTheme;
 }
 
 export type User = {

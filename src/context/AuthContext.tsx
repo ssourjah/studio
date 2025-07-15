@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import type { User, Role } from '@/lib/types';
+import type { User, Role, ColorTheme } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -17,6 +17,25 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function applyCustomTheme(lightTheme: ColorTheme | null, darkTheme: ColorTheme | null) {
+    const styleId = 'user-custom-theme';
+    let styleElement = document.getElementById(styleId);
+
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+    }
+    
+    const lightVars = lightTheme ? Object.entries(lightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
+    const darkVars = darkTheme ? Object.entries(darkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
+
+    styleElement.innerHTML = `
+        :root { ${lightVars} }
+        .dark { ${darkVars} }
+    `;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -34,8 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = { id: userSnap.id, ...userSnap.data() } as User;
             setCurrentUser(userData);
 
-            // Sync database preference with local storage and apply them
             const prefs = userData.preferences || {};
+            
+            // Apply visual preferences
             const dbTheme = prefs.theme || 'system';
             if (localStorage.getItem('theme') !== dbTheme) {
               localStorage.setItem('theme', dbTheme);
@@ -55,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
             document.documentElement.classList.add(`text-${dbFontSize}`);
 
+            applyCustomTheme(prefs.customLightTheme || null, prefs.customDarkTheme || null);
 
             if (userData.roleId) {
               const roleDocRef = doc(db, 'roles', userData.roleId);

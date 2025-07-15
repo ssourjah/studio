@@ -56,14 +56,8 @@ const defaultDark: ColorTheme = {
 
 export default function PreferencesPage() {
     const { currentUser, setCurrentUser } = useAuth();
-    const { 
-        customLightTheme, customDarkTheme, 
-        setCustomLightTheme, setCustomDarkTheme,
-        loading: settingsLoading
-    } = useSettings();
     const { toast } = useToast();
-    const { userRole } = useAuth();
-
+    
     const [selectedTheme, setSelectedTheme] = useState<ThemePreference>('system');
     const [selectedFontSize, setSelectedFontSize] = useState<FontSizePreference>('base');
     const [isSaving, setIsSaving] = useState(false);
@@ -71,19 +65,15 @@ export default function PreferencesPage() {
     const [lightThemeColors, setLightThemeColors] = useState<ColorTheme>(defaultLight);
     const [darkThemeColors, setDarkThemeColors] = useState<ColorTheme>(defaultDark);
 
-    const canEditAppearance = userRole?.permissions.settings?.edit ?? false;
-
     useEffect(() => {
         if (currentUser?.preferences) {
-            const { theme, fontSize } = currentUser.preferences;
+            const { theme, fontSize, customLightTheme, customDarkTheme } = currentUser.preferences;
             if (theme) setSelectedTheme(theme);
             if (fontSize) setSelectedFontSize(fontSize);
-        }
-        if (!settingsLoading) {
             setLightThemeColors(customLightTheme || defaultLight);
             setDarkThemeColors(customDarkTheme || defaultDark);
         }
-    }, [currentUser, customLightTheme, customDarkTheme, settingsLoading]);
+    }, [currentUser]);
 
     // Effect for real-time theme preview
     useEffect(() => {
@@ -138,23 +128,16 @@ export default function PreferencesPage() {
         setIsSaving(true);
         
         try {
-            // Save user-specific preferences (theme choice, font size)
             const userDocRef = doc(db, 'users', currentUser.id);
             const newPreferences: UserPreferences = { 
-                ...currentUser.preferences, 
                 theme: selectedTheme,
                 fontSize: selectedFontSize,
+                customLightTheme: lightThemeColors,
+                customDarkTheme: darkThemeColors,
             };
             await updateDoc(userDocRef, { preferences: newPreferences });
             setCurrentUser({ ...currentUser, preferences: newPreferences });
             
-            // Save global theme colors if user has permission
-            if (canEditAppearance) {
-                await setCustomLightTheme(lightThemeColors);
-                await setCustomDarkTheme(darkThemeColors);
-            }
-
-            // Also update local storage upon saving
             localStorage.setItem('theme', selectedTheme);
             localStorage.setItem('fontSize', selectedFontSize);
 
@@ -274,23 +257,13 @@ export default function PreferencesPage() {
                 <CardHeader>
                     <div className='flex items-center gap-2'>
                         <Palette className="h-6 w-6" />
-                        <CardTitle>Global Theme Customization</CardTitle>
+                        <CardTitle>My Custom Theme</CardTitle>
                     </div>
                     <CardDescription>
-                        Fine-tune the colors for light and dark themes. Changes are applied instantly for preview.
-                        {!canEditAppearance && ' (Read-only)'}
+                        Fine-tune your personal colors for light and dark themes. Changes are applied instantly for preview.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {!canEditAppearance && (
-                        <Alert variant="destructive" className="mb-6">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Permission Denied</AlertTitle>
-                            <AlertDescription>
-                                You do not have permission to edit application-wide theme settings. Your changes here are for preview only and will not be saved.
-                            </AlertDescription>
-                        </Alert>
-                    )}
                     <fieldset disabled={isSaving}>
                         <Tabs defaultValue="light_theme">
                             <TabsList className="grid w-full grid-cols-2">
@@ -299,26 +272,26 @@ export default function PreferencesPage() {
                             </TabsList>
                             <TabsContent value="light_theme" className="pt-4">
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
+                                    <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
+                                    <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
+                                    <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
+                                    <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
                                 </div>
-                                <Button variant="outline" className="mt-6" onClick={() => setLightThemeColors(defaultLight)} disabled={!canEditAppearance}>
+                                <Button variant="outline" className="mt-6" onClick={() => setLightThemeColors(defaultLight)}>
                                     <Undo2 className="mr-2 h-4 w-4" />
                                     Reset to Default
                                 </Button>
                             </TabsContent>
                             <TabsContent value="dark_theme" className="pt-4">
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} disabled={!canEditAppearance} />
-                                    <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} disabled={!canEditAppearance} />
+                                    <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} />
+                                    <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} />
+                                    <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} />
+                                    <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
+                                    <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
                                 </div>
-                                <Button variant="outline" className="mt-6" onClick={() => setDarkThemeColors(defaultDark)} disabled={!canEditAppearance}>
+                                <Button variant="outline" className="mt-6" onClick={() => setDarkThemeColors(defaultDark)}>
                                     <Undo2 className="mr-2 h-4 w-4" />
                                     Reset to Default
                                 </Button>
@@ -335,3 +308,4 @@ export default function PreferencesPage() {
         </div>
     );
 }
+

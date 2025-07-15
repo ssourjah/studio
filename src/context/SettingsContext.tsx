@@ -23,10 +23,6 @@ interface SettingsContextType {
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
     smtpSettings: SmtpSettings;
     setSmtpSettings: (settings: SmtpSettings) => Promise<void>;
-    customLightTheme: ColorTheme | null;
-    setCustomLightTheme: (theme: ColorTheme | null) => Promise<void>;
-    customDarkTheme: ColorTheme | null;
-    setCustomDarkTheme: (theme: ColorTheme | null) => Promise<void>;
     loading: boolean;
 }
 
@@ -35,32 +31,10 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 const companySettingsDocRef = doc(db, 'settings', 'company');
 const adminSettingsDocRef = doc(db, 'settings', 'admin');
 
-function applyGlobalCustomTheme(lightTheme: ColorTheme | null, darkTheme: ColorTheme | null) {
-    const styleId = 'global-custom-theme';
-    let styleElement = document.getElementById(styleId);
-
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-    }
-    
-    const lightVars = lightTheme ? Object.entries(lightTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-    const darkVars = darkTheme ? Object.entries(darkTheme).map(([key, value]) => `--${key}: ${value};`).join(' ') : '';
-
-    styleElement.innerHTML = `
-        :root { ${lightVars} }
-        .dark { ${darkVars} }
-    `;
-}
-
-
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
     const [logoUrlLight, setLogoUrlLightState] = useState<string | null>(null);
     const [logoUrlDark, setLogoUrlDarkState] = useState<string | null>(null);
-    const [customLightTheme, setCustomLightThemeState] = useState<ColorTheme | null>(null);
-    const [customDarkTheme, setCustomDarkThemeState] = useState<ColorTheme | null>(null);
     const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
     const [smtpSettings, setSmtpSettingsState] = useState<SmtpSettings>({
         smtpHost: '',
@@ -79,9 +53,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 setCompanyNameState(data.companyName || 'TaskMaster Pro');
                 setLogoUrlLightState(data.logoUrlLight || null);
                 setLogoUrlDarkState(data.logoUrlDark || null);
-                setCustomLightThemeState(data.customLightTheme || null);
-                setCustomDarkThemeState(data.customDarkTheme || null);
-                applyGlobalCustomTheme(data.customLightTheme || null, data.customDarkTheme || null);
             }
             setLoading(false);
         }, (error) => {
@@ -120,14 +91,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         await setDoc(companySettingsDocRef, { logoUrlDark: url }, { merge: true });
     };
     
-    const setCustomLightTheme = async (theme: ColorTheme | null) => {
-        await setDoc(companySettingsDocRef, { customLightTheme: theme }, { merge: true });
-    };
-
-    const setCustomDarkTheme = async (theme: ColorTheme | null) => {
-        await setDoc(companySettingsDocRef, { customDarkTheme: theme }, { merge: true });
-    };
-
     const setDisableAdminLogin = async (disabled: boolean) => {
         await setDoc(adminSettingsDocRef, { disableAdminLogin: disabled }, { merge: true });
     };
@@ -147,10 +110,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDisableAdminLogin,
         smtpSettings,
         setSmtpSettings,
-        customLightTheme,
-        setCustomLightTheme,
-        customDarkTheme,
-        setCustomDarkTheme,
         loading
     };
 
