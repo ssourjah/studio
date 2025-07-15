@@ -42,7 +42,6 @@ const defaultLight: ColorTheme = {
     background: '0 0% 100%',
     foreground: '222.2 84% 4.9%',
     card: '0 0% 100%',
-    cardForeground: '222.2 84% 4.9%',
     primary: '222.2 47.4% 11.2%',
     accent: '210 40% 96.1%',
 };
@@ -51,7 +50,6 @@ const defaultDark: ColorTheme = {
     background: '222.2 84% 4.9%',
     foreground: '210 40% 98%',
     card: '222.2 84% 4.9%',
-    cardForeground: '210 40% 98%',
     primary: '210 40% 98%',
     accent: '217.2 32.6% 17.5%',
 };
@@ -285,7 +283,6 @@ export default function PreferencesPage() {
                                     <ColorPicker label="Background" color={lightThemeColors.background} onChange={(value) => setLightThemeColors(p => ({...p, background: value}))} />
                                     <ColorPicker label="Foreground (Text)" color={lightThemeColors.foreground} onChange={(value) => setLightThemeColors(p => ({...p, foreground: value}))} />
                                     <ColorPicker label="Card" color={lightThemeColors.card} onChange={(value) => setLightThemeColors(p => ({...p, card: value}))} />
-                                    <ColorPicker label="Card Foreground" color={lightThemeColors.cardForeground} onChange={(value) => setLightThemeColors(p => ({...p, cardForeground: value}))} />
                                     <ColorPicker label="Primary" color={lightThemeColors.primary} onChange={(value) => setLightThemeColors(p => ({...p, primary: value}))} />
                                     <ColorPicker label="Accent" color={lightThemeColors.accent} onChange={(value) => setLightThemeColors(p => ({...p, accent: value}))} />
                                 </div>
@@ -299,7 +296,6 @@ export default function PreferencesPage() {
                                     <ColorPicker label="Background" color={darkThemeColors.background} onChange={(value) => setDarkThemeColors(p => ({...p, background: value}))} />
                                     <ColorPicker label="Foreground (Text)" color={darkThemeColors.foreground} onChange={(value) => setDarkThemeColors(p => ({...p, foreground: value}))} />
                                     <ColorPicker label="Card" color={darkThemeColors.card} onChange={(value) => setDarkThemeColors(p => ({...p, card: value}))} />
-                                    <ColorPicker label="Card Foreground" color={darkThemeColors.cardForeground} onChange={(value) => setDarkThemeColors(p => ({...p, cardForeground: value}))} />
                                     <ColorPicker label="Primary" color={darkThemeColors.primary} onChange={(value) => setDarkThemeColors(p => ({...p, primary: value}))} />
                                     <ColorPicker label="Accent" color={darkThemeColors.accent} onChange={(value) => setDarkThemeColors(p => ({...p, accent: value}))} />
                                 </div>

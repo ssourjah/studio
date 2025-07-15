@@ -29,7 +29,6 @@ export interface ColorTheme {
     background: string;
     foreground: string;
     card: string;
-    cardForeground: string;
     primary: string;
     accent: string;
 }

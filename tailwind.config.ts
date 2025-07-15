@@ -46,7 +46,7 @@ export default {
         },
         card: {
           DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          foreground: 'hsl(var(--foreground))',
         },
         chart: {
           '1': 'hsl(var(--chart-1))',
