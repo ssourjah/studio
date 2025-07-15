@@ -41,8 +41,6 @@ const managementMenuItems = [
     { href: '/task-management', label: 'Task Management', icon: ListTodo, permission: 'taskManagement' },
     { href: '/reports', label: 'Task Report', icon: FileSpreadsheet, permission: 'reports' },
     { href: '/user-management', label: 'User Management', icon: Users, permission: 'userManagement' },
-    { href: '/administrator', label: 'Administrator', icon: Shield, permission: 'administrator' },
-    { href: '/administrator', label: 'Settings', icon: Settings, permission: 'settings' },
 ] as const;
 
 
@@ -94,8 +92,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
     return name.substring(0, 2).toUpperCase();
   }
-
-  const canSeeManagementSection = managementMenuItems.some(item => 
+  
+  const canSeeAdmin = userRole?.permissions.administrator?.read || userRole?.permissions.settings?.read;
+  const canSeeManagementSection = canSeeAdmin || managementMenuItems.some(item => 
     userRole?.permissions[item.permission]?.read
   );
 
@@ -152,6 +151,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     }
                     return null;
                   })}
+                  {canSeeAdmin && (
+                      <DropdownMenuItem asChild>
+                          <Link href="/administrator">
+                              <Shield className="mr-2 h-4 w-4" />
+                              Administrator
+                          </Link>
+                      </DropdownMenuItem>
+                  )}
                 </>
               )}
 
@@ -172,5 +179,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-    
