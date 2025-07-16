@@ -30,6 +30,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { testSmtpConnection } from '@/ai/flows/test-smtp-flow';
 
 const services: { id: PermissionLevel; name: string; description: string }[] = [
     { id: 'dashboard', name: 'Dashboard', description: 'View summary cards and charts.' },
@@ -324,10 +325,11 @@ function AppSettingsTab() {
 
   const [isSavingCompany, setIsSavingCompany] = useState(false);
   const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [isSavingAdmin, setIsSavingAdmin] = useState(false);
 
   const canEditSettings = userRole?.permissions.settings?.edit ?? false;
-  const anySaving = isSavingCompany || isSavingSmtp || isSavingAdmin;
+  const anySaving = isSavingCompany || isSavingSmtp || isSavingAdmin || isTestingSmtp;
 
   useEffect(() => {
     if (!loading) {
@@ -392,6 +394,26 @@ function AppSettingsTab() {
         });
     } finally {
         setIsSavingSmtp(false);
+    }
+  };
+
+  const handleSmtpTest = async () => {
+    setIsTestingSmtp(true);
+    try {
+        await testSmtpConnection(localSmtpSettings);
+        toast({
+            title: "Connection Successful",
+            description: "The SMTP server is configured correctly.",
+        });
+    } catch (error: any) {
+        console.error("SMTP Test Error:", error);
+        toast({
+            title: "Connection Failed",
+            description: error.message || "Could not connect to the SMTP server. Please check the details and try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsTestingSmtp(false);
     }
   };
 
@@ -524,6 +546,7 @@ function AppSettingsTab() {
                 </div>
                 <div className="flex gap-2 mt-4">
                     <Button onClick={handleSmtpSave} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
+                    <Button onClick={handleSmtpTest} variant="outline" disabled={isTestingSmtp || !canEditSettings}>{isTestingSmtp ? 'Testing...' : 'Test Connection'}</Button>
                 </div>
             </fieldset>
         </CardContent>
