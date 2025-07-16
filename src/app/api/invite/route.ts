@@ -9,12 +9,15 @@ const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
 function getServiceAccount(): admin.ServiceAccount {
     if (!serviceAccountJson) {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set.');
+        throw new Error('FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.');
     }
     try {
+        // Log a success message to confirm the variable is being read and is valid JSON
+        console.log("API Route: Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON.");
         return JSON.parse(serviceAccountJson);
-    } catch (e) {
-        throw new Error('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON.');
+    } catch (e: any) {
+        // Provide a more detailed error if parsing fails
+        throw new Error(`FATAL: API Route: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`);
     }
 }
 
@@ -28,7 +31,6 @@ function getAdminApp(): admin.app.App {
     }
     return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://taskmaster-pro-9ah46-default-rtdb.europe-west1.firebasedatabase.app"
     });
 }
 // --- End Firebase Admin Initialization ---
