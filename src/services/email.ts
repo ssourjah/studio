@@ -4,6 +4,8 @@
 import { z } from 'zod';
 import { getEmailConfig } from './secure-settings';
 import nodemailer from 'nodemailer';
+import type { ReportFormat } from '@/lib/types';
+import { generateTaskReportCsv } from './reports';
 
 const inviteSchema = z.object({
   name: z.string(),
@@ -39,7 +41,7 @@ export async function sendInvite(data: InviteInput): Promise<void> {
 
 const reportSchema = z.object({
   recipient: z.string().email(),
-  format: z.enum(['pdf', 'excel']),
+  format: z.enum(['pdf', 'excel', 'csv']),
 });
 export type ReportInput = z.infer<typeof reportSchema>;
 
@@ -47,10 +49,31 @@ export async function sendTaskReport(data: ReportInput) {
     const { recipient, format } = reportSchema.parse(data);
     const { transporter, companyName, fromAddress } = await getEmailConfig();
 
-    // Placeholder for report generation logic
-    const reportBuffer = Buffer.from(`This is a placeholder for the ${format.toUpperCase()} report.`);
-    const filename = `task-report-${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
-    const mimeType = format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    let reportBuffer: Buffer;
+    let filename: string;
+    let mimeType: string;
+
+    switch (format) {
+        case 'csv':
+            const csvData = await generateTaskReportCsv();
+            reportBuffer = Buffer.from(csvData, 'utf-8');
+            filename = `task-report-${new Date().toISOString().split('T')[0]}.csv`;
+            mimeType = 'text/csv';
+            break;
+        case 'pdf':
+            reportBuffer = Buffer.from(`This is a placeholder for the PDF report.`);
+            filename = `task-report-${new Date().toISOString().split('T')[0]}.pdf`;
+            mimeType = 'application/pdf';
+            break;
+        case 'excel':
+             reportBuffer = Buffer.from(`This is a placeholder for the EXCEL report.`);
+            filename = `task-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            break;
+        default:
+            throw new Error('Unsupported report format');
+    }
+
 
     const mailOptions = {
         from: `"${companyName}" <${fromAddress}>`,

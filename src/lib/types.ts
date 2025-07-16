@@ -1,6 +1,7 @@
 
 
 export type TaskStatus = 'Incomplete' | 'Completed' | 'Cancelled';
+export type ReportFormat = 'pdf' | 'excel' | 'csv';
 
 export type Task = {
   id: string;

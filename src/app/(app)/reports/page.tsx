@@ -13,7 +13,7 @@ import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin, ChevronDow
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { DateRange } from "react-day-picker";
-import type { Task, User, Role } from '@/lib/types';
+import type { Task, User, Role, ReportFormat } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -23,8 +23,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { sendTaskReport } from '@/services/email';
-
-type ReportFormat = 'pdf' | 'excel';
+import { generateTaskReportCsv } from '@/services/reports';
 
 function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
     const [recipient, setRecipient] = useState(currentUserEmail);
@@ -86,6 +85,7 @@ function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
                             <SelectContent>
                                 <SelectItem value="pdf">PDF</SelectItem>
                                 <SelectItem value="excel">Excel</SelectItem>
+                                <SelectItem value="csv">CSV</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -111,6 +111,7 @@ export default function ReportsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
     const { currentUser } = useAuth();
+    const { toast } = useToast();
 
     const usersMap = new Map(users.map(user => [user.id, user.name]));
     
@@ -160,6 +161,27 @@ export default function ReportsPage() {
         window.open(url, '_blank');
     };
 
+    const handleCsvExport = async () => {
+        try {
+            const csvData = await generateTaskReportCsv();
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `task-report-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            toast({
+                title: 'Export Failed',
+                description: 'Could not generate the CSV report.',
+                variant: 'destructive',
+            });
+        }
+    };
+
   return (
     <Card>
       <CardHeader>
@@ -184,6 +206,10 @@ export default function ReportsPage() {
                         <DropdownMenuItem>
                              <FileSpreadsheet className="mr-2 h-4 w-4" />
                             Export to Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleCsvExport}>
+                             <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Export to CSV
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
