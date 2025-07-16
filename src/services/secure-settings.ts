@@ -12,12 +12,10 @@ function getServiceAccount(): admin.ServiceAccount {
         throw new Error('FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.');
     }
     try {
-        // Log a success message to confirm the variable is being read and is valid JSON
-        console.log("Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON.");
+        console.log("Secure-Settings: Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON.");
         return JSON.parse(serviceAccountJson);
     } catch (e: any) {
-        // Provide a more detailed error if parsing fails
-        throw new Error(`FATAL: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`);
+        throw new Error(`FATAL: Secure-Settings: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`);
     }
 }
 
@@ -30,7 +28,7 @@ function getAdminApp(): admin.app.App {
         }
     }
     return admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.credential.cert(serviceAccount)
     });
 }
 // --- End Firebase Admin Initialization ---
