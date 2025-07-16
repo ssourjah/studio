@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const adminSettingsDocRef = doc(db, 'settings', 'admin');
+const companySettingsDocRef = doc(db, 'settings', 'company');
 
 interface EmailOptions {
     to: string;
@@ -33,6 +34,8 @@ async function getSmtpConfig() {
 
 export async function sendEmail(options: EmailOptions) {
     const smtpConfig = await getSmtpConfig();
+    const companySettingsSnap = await getDoc(companySettingsDocRef);
+    const companyName = companySettingsSnap.exists() ? companySettingsSnap.data().companyName : 'TaskMaster Pro';
 
     if (!smtpConfig.host || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
         throw new Error("SMTP server is not configured. Please complete the settings on the Settings page.");
@@ -41,7 +44,7 @@ export async function sendEmail(options: EmailOptions) {
     const transporter = nodemailer.createTransport(smtpConfig);
 
     const mailOptions = {
-        from: `"${smtpConfig.auth.user}" <${smtpConfig.auth.user}>`, // sender address
+        from: `"${companyName}" <${smtpConfig.auth.user}>`,
         to: options.to,
         subject: options.subject,
         text: options.text,
@@ -71,15 +74,18 @@ export async function sendInvite(input: SendInviteInput): Promise<void> {
     // standard registration page.
     const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/register?roleId=${input.roleId}`;
     
-    const subject = 'You are invited to join TaskMaster Pro';
+    const companySettingsSnap = await getDoc(companySettingsDocRef);
+    const companyName = companySettingsSnap.exists() ? companySettingsSnap.data().companyName : 'TaskMaster Pro';
+    
+    const subject = `You are invited to join ${companyName}`;
     const emailBody = `
       <p>Hello ${input.name},</p>
-      <p>You have been invited to create an account on TaskMaster Pro.</p>
+      <p>You have been invited to create an account on ${companyName}.</p>
       <p>Please click the link below to complete your registration:</p>
       <p><a href="${registrationUrl}">Register Now</a></p>
       <p>If you were not expecting this invitation, you can safely ignore this email.</p>
       <p>Thanks,</p>
-      <p>The TaskMaster Pro Team</p>
+      <p>The ${companyName} Team</p>
     `;
 
     await sendEmail({
