@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
 
-export const SmtpSettingsSchema = z.object({
+const SmtpSettingsSchema = z.object({
   smtpHost: z.string().min(1, 'SMTP Host is required'),
   smtpPort: z.string().min(1, 'SMTP Port is required'),
   smtpUser: z.string().min(1, 'SMTP User is required'),
