@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
+import { getEmailConfig } from './secure-settings';
 
 const SmtpSettingsSchema = z.object({
   smtpHost: z.string().min(1, 'SMTP Host is required'),
@@ -12,22 +13,21 @@ const SmtpSettingsSchema = z.object({
 });
 export type SmtpSettingsInput = z.infer<typeof SmtpSettingsSchema>;
 
-export async function testSmtpConnection(settings: SmtpSettingsInput): Promise<{ success: boolean; message: string }> {
-  const transporter = nodemailer.createTransport({
-      host: settings.smtpHost,
-      port: parseInt(settings.smtpPort, 10),
-      secure: parseInt(settings.smtpPort, 10) === 465,
-      auth: {
-          user: settings.smtpUser,
-          pass: settings.smtpPassword || '',
-      },
-  });
+export async function testSmtpConnection(): Promise<{ success: boolean; message: string }> {
   
   try {
+      const { transporter } = await getEmailConfig();
       await transporter.verify();
       return { success: true, message: 'Connection successful.' };
   } catch (error: any) {
       console.error("SMTP verification failed", error);
-      throw new Error(`Connection failed: ${error.message}`);
+      // Don't expose detailed error message to client
+      if (error.message.includes("credentials")) {
+          throw new Error('Connection failed: Invalid credentials.');
+      }
+       if (error.message.includes("ENOTFOUND")) {
+          throw new Error('Connection failed: Hostname not found. Check the SMTP Host.');
+      }
+      throw new Error(`Connection failed. Please check the settings and try again.`);
   }
 }
