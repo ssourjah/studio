@@ -6,7 +6,6 @@
  * - SmtpSettingsSchema - The input type for the testSmtpConnection function.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
 
@@ -18,41 +17,22 @@ export const SmtpSettingsSchema = z.object({
 });
 export type SmtpSettingsInput = z.infer<typeof SmtpSettingsSchema>;
 
-export async function testSmtpConnection(input: SmtpSettingsInput): Promise<{ success: boolean; message: string }> {
-  return testSmtpConnectionFlow(input);
-}
-
-const testSmtpConnectionFlow = ai.defineFlow(
-  {
-    name: 'testSmtpConnectionFlow',
-    inputSchema: SmtpSettingsSchema,
-    outputSchema: z.object({
-        success: z.boolean(),
-        message: z.string()
-    })
-  },
-  async (settings) => {
-    const transporter = nodemailer.createTransport({
-        host: settings.smtpHost,
-        port: parseInt(settings.smtpPort, 10),
-        secure: parseInt(settings.smtpPort, 10) === 465,
-        auth: {
-            user: settings.smtpUser,
-            pass: settings.smtpPassword || '',
-        },
-        // In some environments, you might need to allow self-signed certificates
-        // tls: {
-        //     rejectUnauthorized: false
-        // }
-    });
-    
-    try {
-        await transporter.verify();
-        return { success: true, message: 'Connection successful.' };
-    } catch (error: any) {
-        console.error("SMTP verification failed", error);
-        // We re-throw the error so the client-side catch block can display a meaningful message.
-        throw new Error(`Connection failed: ${error.message}`);
-    }
+export async function testSmtpConnection(settings: SmtpSettingsInput): Promise<{ success: boolean; message: string }> {
+  const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: parseInt(settings.smtpPort, 10),
+      secure: parseInt(settings.smtpPort, 10) === 465,
+      auth: {
+          user: settings.smtpUser,
+          pass: settings.smtpPassword || '',
+      },
+  });
+  
+  try {
+      await transporter.verify();
+      return { success: true, message: 'Connection successful.' };
+  } catch (error: any) {
+      console.error("SMTP verification failed", error);
+      throw new Error(`Connection failed: ${error.message}`);
   }
-);
+}

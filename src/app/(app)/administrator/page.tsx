@@ -400,11 +400,19 @@ function AppSettingsTab() {
   const handleSmtpTest = async () => {
     setIsTestingSmtp(true);
     try {
-        await testSmtpConnection(localSmtpSettings);
-        toast({
-            title: "Connection Successful",
-            description: "The SMTP server is configured correctly.",
-        });
+        const result = await testSmtpConnection(localSmtpSettings);
+        if (result.success) {
+            toast({
+                title: "Connection Successful",
+                description: result.message,
+            });
+        } else {
+             toast({
+                title: "Connection Failed",
+                description: result.message,
+                variant: "destructive",
+            });
+        }
     } catch (error: any) {
         console.error("SMTP Test Error:", error);
         toast({
