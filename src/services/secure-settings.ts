@@ -34,6 +34,8 @@ export async function getAdminApp(): Promise<admin.app.App | { error: string }> 
         return serviceAccount;
     }
 
+    // if(!('error' in serviceAccount)) throw new Error(JSON.stringify(serviceAccount))
+
     if (admin.apps.length > 0) {
         const defaultApp = admin.apps.find((app) => app?.name === '[DEFAULT]');
         if (defaultApp) {
@@ -49,9 +51,15 @@ export async function getAdminApp(): Promise<admin.app.App | { error: string }> 
 export async function getEmailConfig() {
     try {
         const adminApp = await getAdminApp();
-        if ('error' in adminApp) {
-            throw new Error(adminApp.error);
+        try {
+            if ('error' in adminApp) {
+                throw new Error(`Error getting admin app: ${adminApp.error}`);
+            }
+        } catch (error: any) {
+            console.error("Failed to get admin app:", error);
+            throw new Error(`My Custom Error: ${error.message}`);
         }
+
         const db = adminApp.firestore();
 
         const adminSettingsDoc = await db.collection('settings').doc('admin').get();

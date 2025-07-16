@@ -69,9 +69,9 @@ export async function sendInvite(data: InviteInput): Promise<void> {
     });
   } catch(error: any) {
     // Intercept the specific authentication error and provide a better message.
-    if (error.message && error.message.includes('UNAUTHENTICATED')) {
-        throw new Error('Authentication failed. Please check your FIREBASE_SERVICE_ACCOUNT_JSON credentials and ensure the service account has Firestore permissions.');
-    }
+    // if (error.message && error.message.includes('UNAUTHENTICATED')) {
+    //     throw new Error('Authentication failed. Please check your FIREBASE_SERVICE_ACCOUNT_JSON credentials and ensure the service account has Firestore permissions.');
+    // }
     // Re-throw other errors
     throw error;
   }
