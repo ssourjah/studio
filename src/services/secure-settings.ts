@@ -7,20 +7,29 @@ import nodemailer from 'nodemailer';
 // --- Firebase Admin Initialization ---
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-function getServiceAccount(): admin.ServiceAccount {
+function getServiceAccount(): admin.ServiceAccount | { error: string } {
     if (!serviceAccountJson) {
-        throw new Error('FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.');
+        const errorMessage = 'FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.';
+        console.error(errorMessage);
+        return { error: errorMessage };
     }
     try {
+        const serviceAccount = JSON.parse(serviceAccountJson);
         console.log("Secure-Settings: Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON.");
-        return JSON.parse(serviceAccountJson);
+        return serviceAccount;
     } catch (e: any) {
-        throw new Error(`FATAL: Secure-Settings: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`);
+        const errorMessage = `FATAL: Secure-Settings: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`;
+        console.error(errorMessage);
+        return { error: errorMessage };
     }
 }
 
-function getAdminApp(): admin.app.App {
+export async function getAdminApp(): Promise<admin.app.App | { error: string }> {
     const serviceAccount = getServiceAccount();
+    if ('error' in serviceAccount) {
+        return serviceAccount;
+    }
+
     if (admin.apps.length > 0) {
         const defaultApp = admin.apps.find((app) => app?.name === '[DEFAULT]');
         if (defaultApp) {
@@ -35,7 +44,10 @@ function getAdminApp(): admin.app.App {
 
 export async function getEmailConfig() {
     try {
-        const adminApp = getAdminApp();
+        const adminApp = await getAdminApp();
+        if ('error' in adminApp) {
+            throw new Error(adminApp.error);
+        }
         const db = adminApp.firestore();
 
         const adminSettingsDoc = await db.collection('settings').doc('admin').get();

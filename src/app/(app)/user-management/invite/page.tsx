@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { sendInvite } from "@/services/email";
-import { checkEnvironment, type EnvironmentStatus } from "@/services/diagnostics";
+import { checkEnvironment } from "@/services/diagnostics";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const userSchema = z.object({
@@ -47,7 +47,6 @@ export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
-  const [envStatus, setEnvStatus] = useState<EnvironmentStatus | null>(null);
   const [isCheckingEnv, setIsCheckingEnv] = useState(false);
 
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
@@ -128,9 +127,18 @@ export default function InviteUserPage() {
       setIsCheckingEnv(true);
       try {
           const status = await checkEnvironment();
-          setEnvStatus(status);
+          console.log("Raw getAdminApp() return:", status);
+          toast({
+              title: "Check Complete",
+              description: "The raw output from getAdminApp() has been logged to your browser's console.",
+          });
       } catch (e: any) {
-          setEnvStatus({ error: e.message || "An unknown error occurred." });
+          console.error("Error during environment check:", e);
+          toast({
+              title: "Check Failed",
+              description: "An error occurred. Check the browser console.",
+              variant: "destructive",
+          });
       } finally {
           setIsCheckingEnv(false);
       }
@@ -284,25 +292,6 @@ export default function InviteUserPage() {
                         </Button>
                     </div>
                  </form>
-                 {envStatus && (
-                     <Alert className="mt-4" variant={envStatus.error ? "destructive" : "default"}>
-                         <AlertCircle className="h-4 w-4" />
-                         <AlertTitle>Environment Configuration Status</AlertTitle>
-                         <AlertDescription>
-                            {envStatus.error ? (
-                                <p>{envStatus.error}</p>
-                            ) : (
-                                <ul className="list-disc pl-5 space-y-1">
-                                    {Object.entries(envStatus).map(([key, value]) => (
-                                       <li key={key}>
-                                           <strong>{key}:</strong> <span className={value === 'OK' ? 'text-green-600' : 'text-red-600'}>{value}</span>
-                                       </li>
-                                    ))}
-                                </ul>
-                            )}
-                         </AlertDescription>
-                     </Alert>
-                 )}
             </CardContent>
         </Card>
     </div>
