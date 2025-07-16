@@ -18,8 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
-import { sendInvite } from '@/services/email';
-import { useSettings } from "@/context/SettingsContext";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -111,11 +109,20 @@ export default function InviteUserPage() {
         return;
     }
     try {
-        await sendInvite({
-            name: data.name,
-            email: data.email,
-            roleId: data.roleId,
+        const response = await fetch('/api/invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to send invitation.');
+        }
+
         toast({ title: "Invitation Sent", description: `An invitation has been sent to ${data.email}.` });
         inviteReset();
     } catch (error: any) {
