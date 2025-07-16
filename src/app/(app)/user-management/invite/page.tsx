@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, UserPlus, Mail } from "lucide-react";
+import { ArrowLeft, UserPlus, Mail, AlertCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm, Controller, useForm as useInviteForm } from "react-hook-form";
@@ -19,6 +19,8 @@ import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { sendInvite } from "@/services/email";
+import { checkEnvironment, type EnvironmentStatus } from "@/services/diagnostics";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -45,6 +47,9 @@ export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
+  const [envStatus, setEnvStatus] = useState<EnvironmentStatus | null>(null);
+  const [isCheckingEnv, setIsCheckingEnv] = useState(false);
+
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
   });
@@ -118,6 +123,18 @@ export default function InviteUserPage() {
         toast({ title: "Error", description: error.message || "Could not send invitation. Please check SMTP settings.", variant: "destructive" });
     }
   };
+
+  const handleCheckEnv = async () => {
+      setIsCheckingEnv(true);
+      try {
+          const status = await checkEnvironment();
+          setEnvStatus(status);
+      } catch (e: any) {
+          setEnvStatus({ error: e.message || "An unknown error occurred." });
+      } finally {
+          setIsCheckingEnv(false);
+      }
+  }
 
   return (
     <div className="space-y-6">
@@ -221,7 +238,7 @@ export default function InviteUserPage() {
              <CardHeader>
                 <CardTitle>Invite New User via Email</CardTitle>
                 <CardDescription>
-                    Send an invitation link for a new user to register themselves.
+                    Send an invitation link for a new user to register themselves. This requires server environment variables to be configured correctly.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -256,11 +273,36 @@ export default function InviteUserPage() {
                          />
                          {inviteErrors.roleId && <p className="text-red-500 text-sm">{inviteErrors.roleId.message}</p>}
                     </div>
-                    <Button type="submit" disabled={isInviting || !canCreateUsers}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        {isInviting ? 'Sending...' : 'Send Invitation'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button type="submit" disabled={isInviting || !canCreateUsers}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            {isInviting ? 'Sending...' : 'Send Invitation'}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={handleCheckEnv} disabled={isCheckingEnv}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            {isCheckingEnv ? 'Checking...' : 'Check Configuration'}
+                        </Button>
+                    </div>
                  </form>
+                 {envStatus && (
+                     <Alert className="mt-4" variant={envStatus.error ? "destructive" : "default"}>
+                         <AlertCircle className="h-4 w-4" />
+                         <AlertTitle>Environment Configuration Status</AlertTitle>
+                         <AlertDescription>
+                            {envStatus.error ? (
+                                <p>{envStatus.error}</p>
+                            ) : (
+                                <ul className="list-disc pl-5 space-y-1">
+                                    {Object.entries(envStatus).map(([key, value]) => (
+                                       <li key={key}>
+                                           <strong>{key}:</strong> <span className={value === 'OK' ? 'text-green-600' : 'text-red-600'}>{value}</span>
+                                       </li>
+                                    ))}
+                                </ul>
+                            )}
+                         </AlertDescription>
+                     </Alert>
+                 )}
             </CardContent>
         </Card>
     </div>
