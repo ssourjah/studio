@@ -14,7 +14,6 @@ import { Sun, Moon, Laptop, Type, Palette, Paintbrush, Undo2, AlertCircle } from
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { hexToHsl, hslToHex } from '@/lib/utils';
-import { useSettings } from '@/context/SettingsContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
@@ -78,7 +77,7 @@ export default function PreferencesPage() {
     // Effect for real-time theme preview
     useEffect(() => {
         const styleId = 'custom-theme-preview';
-        let styleElement = document.getElementById(styleId);
+        let styleElement = document.getElementById(styleId) as HTMLStyleElement | null;
 
         if (!styleElement) {
             styleElement = document.createElement('style');
@@ -87,7 +86,6 @@ export default function PreferencesPage() {
         }
 
         const lightVars = Object.entries(lightThemeColors).map(([key, value]) => {
-            // Convert camelCase to kebab-case for CSS variables
             const cssVarName = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
             return `--${cssVarName}: ${value};`;
         }).join(' ');
@@ -101,11 +99,17 @@ export default function PreferencesPage() {
             :root { ${lightVars} }
             .dark { ${darkVars} }
         `;
-        
+
+        // Cleanup function to remove the preview styles when the component unmounts
+        return () => {
+            const style = document.getElementById(styleId);
+            if (style) {
+                style.innerHTML = '';
+            }
+        };
     }, [lightThemeColors, darkThemeColors]);
 
     const applyTheme = (theme: ThemePreference) => {
-        localStorage.setItem('theme', theme);
         document.documentElement.classList.remove('light', 'dark');
         if (theme === 'system') {
             const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -116,20 +120,24 @@ export default function PreferencesPage() {
     };
 
     const applyFontSize = (size: FontSizePreference) => {
-        localStorage.setItem('fontSize', size);
         document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
         document.documentElement.classList.add(`text-${size}`);
     };
     
-    const handleThemeChange = (theme: ThemePreference) => {
-        setSelectedTheme(theme);
-        applyTheme(theme);
-    };
+    // Effect to handle live preview and cleanup for theme and font size.
+    useEffect(() => {
+        // Apply preview
+        applyTheme(selectedTheme);
+        applyFontSize(selectedFontSize);
 
-    const handleFontSizeChange = (size: FontSizePreference) => {
-        setSelectedFontSize(size);
-        applyFontSize(size);
-    };
+        // Cleanup function to revert to saved settings when navigating away
+        return () => {
+            const savedTheme = (localStorage.getItem('theme') as ThemePreference) || 'system';
+            const savedFontSize = (localStorage.getItem('fontSize') as FontSizePreference) || 'base';
+            applyTheme(savedTheme);
+            applyFontSize(savedFontSize);
+        };
+    }, [selectedTheme, selectedFontSize]);
 
     const handleSave = async () => {
         if (!currentUser) return;
@@ -144,6 +152,8 @@ export default function PreferencesPage() {
                 customDarkTheme: darkThemeColors,
             };
             await updateDoc(userDocRef, { preferences: newPreferences });
+            
+            // This will trigger the AuthContext to update the user and re-apply the saved theme globally
             setCurrentUser({ ...currentUser, preferences: newPreferences });
             
             localStorage.setItem('theme', selectedTheme);
@@ -181,7 +191,7 @@ export default function PreferencesPage() {
                             <p className="text-sm text-muted-foreground">Select the color scheme for the application.</p>
                             <RadioGroup
                                 value={selectedTheme}
-                                onValueChange={handleThemeChange}
+                                onValueChange={(v) => setSelectedTheme(v as ThemePreference)}
                                 className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
                             >
                                 <div>
@@ -222,7 +232,7 @@ export default function PreferencesPage() {
                             <p className="text-sm text-muted-foreground">Adjust the text size for readability.</p>
                             <RadioGroup
                                 value={selectedFontSize}
-                                onValueChange={handleFontSizeChange}
+                                onValueChange={(v) => setSelectedFontSize(v as FontSizePreference)}
                                 className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-3"
                             >
                                 <div>

@@ -23,6 +23,11 @@ service cloud.firestore {
       allow write: if isAuth() && hasPermission('settings', 'edit');
     }
     
+    match /settings/{settingId} {
+      allow read: if isAuth() && hasPermission('settings', 'read');
+      allow write: if isAuth() && (hasPermission('settings', 'create') || hasPermission('settings', 'edit'));
+    }
+    
     match /tasks/{taskId} {
       allow read: if isAuth() && (hasPermission('tasks', 'read') || hasPermission('taskManagement', 'read'));
       allow create: if isAuth() && hasPermission('tasks', 'create');
