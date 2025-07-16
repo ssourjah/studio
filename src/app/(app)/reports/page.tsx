@@ -9,13 +9,100 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { statuses } from '@/lib/mock-data';
-import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin, ChevronDown, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { DateRange } from "react-day-picker";
 import type { Task, User, Role } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { sendTaskReport } from '@/services/email';
+
+type ReportFormat = 'pdf' | 'excel';
+
+function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
+    const [recipient, setRecipient] = useState(currentUserEmail);
+    const [format, setFormat] = useState<ReportFormat>('pdf');
+    const [isSending, setIsSending] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        setRecipient(currentUserEmail);
+    }, [currentUserEmail]);
+
+    const handleSend = async () => {
+        setIsSending(true);
+        try {
+            await sendTaskReport({ recipient, format });
+            toast({
+                title: 'Report Sent',
+                description: `The task report has been sent to ${recipient}.`
+            });
+        } catch (error: any) {
+            toast({
+                title: 'Failed to Send Report',
+                description: error.message || 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Send by Email</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Send Task Report</DialogTitle>
+                    <DialogDescription>
+                        The report will be generated and sent as an email attachment.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="recipient-email">Recipient Email</Label>
+                        <Input
+                            id="recipient-email"
+                            type="email"
+                            value={recipient}
+                            onChange={(e) => setRecipient(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="report-format">Report Format</Label>
+                        <Select value={format} onValueChange={(value) => setFormat(value as ReportFormat)}>
+                            <SelectTrigger id="report-format">
+                                <SelectValue placeholder="Select a format" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="pdf">PDF</SelectItem>
+                                <SelectItem value="excel">Excel</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleSend} disabled={isSending}>
+                        {isSending ? 'Sending...' : 'Send Report'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 export default function ReportsPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -23,6 +110,7 @@ export default function ReportsPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
+    const { currentUser } = useAuth();
 
     const usersMap = new Map(users.map(user => [user.id, user.name]));
     
@@ -81,8 +169,25 @@ export default function ReportsPage() {
                 <CardDescription>View, filter, and export all tasks.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline"><FileText className="mr-2 h-4 w-4" /> Export to PDF</Button>
-                <Button variant="outline"><FileSpreadsheet className="mr-2 h-4 w-4" /> Export to Excel</Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            Export
+                            <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Export to PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                             <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Export to Excel
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <SendReportDialog currentUserEmail={currentUser?.email || ''} />
             </div>
         </div>
       </CardHeader>
