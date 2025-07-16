@@ -1,3 +1,4 @@
+
 'use client';
 import { Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ interface LocationPickerProps {
     onLocationChange: (location: Location) => void;
 }
 
-const defaultPosition: Location = { lat: 51.5072, lng: -0.1276 }; // London
+const defaultPosition: Location = { lat: 25.09709041619391, lng: 55.18116614585842 };
 
 export function LocationPicker({ onLocationChange }: LocationPickerProps) {
   const [position, setPosition] = useState<Location>(defaultPosition);
