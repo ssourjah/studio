@@ -93,16 +93,10 @@ export async function sendTaskReport(data: ReportInput) {
             break;
         case 'pdf':
             // Placeholder for PDF generation
-            reportBuffer = Buffer.from(`This is a placeholder for the PDF report.`);
-            filename = `task-report-${new Date().toISOString().split('T')[0]}.pdf`;
-            mimeType = 'application/pdf';
-            break;
+            throw new Error('PDF reporting is not yet implemented.');
         case 'excel':
             // Placeholder for Excel generation
-            reportBuffer = Buffer.from(`This is a placeholder for the EXCEL report.`);
-            filename = `task-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            break;
+            throw new Error('Excel reporting is not yet implemented.');
         default:
             throw new Error('Unsupported report format');
     }

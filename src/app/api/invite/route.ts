@@ -7,22 +7,29 @@ import { z } from 'zod';
 // --- Firebase Admin Initialization ---
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-function getServiceAccount(): admin.ServiceAccount {
+function getServiceAccount(): admin.ServiceAccount | { error: string } {
     if (!serviceAccountJson) {
-        throw new Error('FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.');
+        const errorMessage = 'FATAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. The application cannot start without it.';
+        console.error(errorMessage);
+        return { error: errorMessage };
     }
     try {
-        // Log a success message to confirm the variable is being read and is valid JSON
+        const serviceAccount = JSON.parse(serviceAccountJson);
         console.log("API Route: Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON.");
-        return JSON.parse(serviceAccountJson);
+        return serviceAccount;
     } catch (e: any) {
-        // Provide a more detailed error if parsing fails
-        throw new Error(`FATAL: API Route: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`);
+        const errorMessage = `FATAL: API Route: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid, single-line JSON string. Error: ${e.message}`;
+        console.error(errorMessage);
+        return { error: errorMessage };
     }
 }
 
-function getAdminApp(): admin.app.App {
+function getAdminApp(): admin.app.App | { error: string } {
     const serviceAccount = getServiceAccount();
+    if ('error' in serviceAccount) {
+        return serviceAccount;
+    }
+
     if (admin.apps.length > 0) {
         const defaultApp = admin.apps.find((app) => app?.name === '[DEFAULT]');
         if (defaultApp) {
@@ -43,10 +50,14 @@ const inviteSchema = z.object({
 
 export async function POST(req: NextRequest) {
     try {
+        const adminApp = getAdminApp();
+        if ('error' in adminApp) {
+            return NextResponse.json({ error: adminApp.error }, { status: 500 });
+        }
+
         const body = await req.json();
         const { name, email, roleId } = inviteSchema.parse(body);
 
-        const adminApp = getAdminApp();
         const db = adminApp.firestore();
 
         const adminSettingsDoc = await db.collection('settings').doc('admin').get();
