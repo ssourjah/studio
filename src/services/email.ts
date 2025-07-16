@@ -46,25 +46,35 @@ export type InviteInput = z.infer<typeof inviteSchema>;
 
 export async function sendInvite(data: InviteInput): Promise<void> {
   const { name, email, roleId } = inviteSchema.parse(data);
-  const { companyName } = await getEmailConfig();
   
-  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/register?roleId=${roleId}`;
+  try {
+    const { companyName } = await getEmailConfig();
+    
+    const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/register?roleId=${roleId}`;
 
-  const html = `
-    <p>Hello ${name},</p>
-    <p>You have been invited to create an account on ${companyName}.</p>
-    <p>Please click the link below to complete your registration:</p>
-    <p><a href="${registrationUrl}">Register Now</a></p>
-    <p>If you were not expecting this invitation, you can safely ignore this email.</p>
-    <p>Thanks,</p>
-    <p>The ${companyName} Team</p>
-  `;
+    const html = `
+      <p>Hello ${name},</p>
+      <p>You have been invited to create an account on ${companyName}.</p>
+      <p>Please click the link below to complete your registration:</p>
+      <p><a href="${registrationUrl}">Register Now</a></p>
+      <p>If you were not expecting this invitation, you can safely ignore this email.</p>
+      <p>Thanks,</p>
+      <p>The ${companyName} Team</p>
+    `;
 
-  await sendEmail({
-      to: email,
-      subject: `You are invited to join ${companyName}`,
-      html: html,
-  });
+    await sendEmail({
+        to: email,
+        subject: `You are invited to join ${companyName}`,
+        html: html,
+    });
+  } catch(error: any) {
+    // Intercept the specific authentication error and provide a better message.
+    if (error.message && error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Authentication failed. Please check your FIREBASE_SERVICE_ACCOUNT_JSON credentials and ensure the service account has Firestore permissions.');
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 
