@@ -1,7 +1,6 @@
-
 'use server';
 
-import { getAdminApp } from '@/lib/firebase-admin';
+import { getAdminApp } from '@/lib/admin';
 
 export interface SmtpConfig {
     host: string;

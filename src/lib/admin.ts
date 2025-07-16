@@ -1,5 +1,4 @@
-
-'use server';
+import 'dotenv/config';
 import * as admin from 'firebase-admin';
 
 function getServiceAccount(): admin.ServiceAccount {
