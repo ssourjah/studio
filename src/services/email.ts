@@ -1,4 +1,6 @@
 
+'use server';
+
 import nodemailer from 'nodemailer';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -18,8 +20,8 @@ async function getSmtpConfig() {
         const data = docSnap.data();
         return {
             host: data.smtpHost,
-            port: data.smtpPort,
-            secure: (data.smtpPort === 465), // true for 465, false for other ports
+            port: data.smtpPort ? parseInt(data.smtpPort, 10) : 587,
+            secure: data.smtpPort ? parseInt(data.smtpPort, 10) === 465 : false,
             auth: {
                 user: data.smtpUser,
                 pass: data.smtpPassword,
@@ -54,4 +56,35 @@ export async function sendEmail(options: EmailOptions) {
         console.error("Error sending email:", error);
         throw new Error("Failed to send email.");
     }
+}
+
+
+export interface SendInviteInput {
+  name: string;
+  email: string;
+  roleId: string;
+}
+
+export async function sendInvite(input: SendInviteInput): Promise<void> {
+    // In a real application, you would generate a unique, single-use registration token,
+    // store it, and include it in the URL. For simplicity, we'll just link to the
+    // standard registration page.
+    const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/register?roleId=${input.roleId}`;
+    
+    const subject = 'You are invited to join TaskMaster Pro';
+    const emailBody = `
+      <p>Hello ${input.name},</p>
+      <p>You have been invited to create an account on TaskMaster Pro.</p>
+      <p>Please click the link below to complete your registration:</p>
+      <p><a href="${registrationUrl}">Register Now</a></p>
+      <p>If you were not expecting this invitation, you can safely ignore this email.</p>
+      <p>Thanks,</p>
+      <p>The TaskMaster Pro Team</p>
+    `;
+
+    await sendEmail({
+      to: input.email,
+      subject: subject,
+      html: emailBody,
+    });
 }

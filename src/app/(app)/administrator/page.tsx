@@ -30,7 +30,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { testSmtpConnection } from '@/ai/flows/test-smtp-flow';
+import { testSmtpConnection } from '@/services/smtp';
 
 const services: { id: PermissionLevel; name: string; description: string }[] = [
     { id: 'dashboard', name: 'Dashboard', description: 'View summary cards and charts.' },

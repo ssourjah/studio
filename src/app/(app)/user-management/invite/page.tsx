@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
-import { sendInvite } from '@/ai/flows/send-invite-flow';
+import { sendInvite } from '@/services/email';
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),

@@ -1,10 +1,5 @@
 
 'use server';
-/**
- * @fileOverview A flow to test SMTP connection settings.
- * - testSmtpConnection - Verifies that a connection can be made to the SMTP server.
- * - SmtpSettingsSchema - The input type for the testSmtpConnection function.
- */
 
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
