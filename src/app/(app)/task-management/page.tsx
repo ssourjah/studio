@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { statuses, taskTypes } from '@/lib/mock-data';
-import type { Task, TaskStatus } from '@/lib/types';
+import type { Task, TaskStatus, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -15,13 +15,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { TaskDetailsDialog } from '@/components/dashboard/task-details-dialog';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 
 export default function TaskManagementPage() {
   const { userRole } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -30,6 +31,7 @@ export default function TaskManagementPage() {
   const { toast } = useToast();
 
   const canDeleteTasks = userRole?.permissions?.taskManagement?.delete ?? false;
+  const usersMap = new Map(users.map(user => [user.id, user.name]));
 
   useEffect(() => {
     const q = collection(db, "tasks");
@@ -39,7 +41,16 @@ export default function TaskManagementPage() {
         setFilteredTasks(tasksData); // Initialize filtered tasks
     });
 
-    return () => unsubscribe();
+    const usersQuery = query(collection(db, "users"));
+    const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
+        const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(usersData);
+    });
+
+    return () => {
+        unsubscribe();
+        usersUnsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -146,10 +157,10 @@ export default function TaskManagementPage() {
                       <TableCell className="font-medium">{task.jobNumber}</TableCell>
                       <TableCell>{task.name}</TableCell>
                       <TableCell>{task.type}</TableCell>
-                      <TableCell>{task.assignedTechnician}</TableCell>
+                      <TableCell>{usersMap.get(task.assignedTechnicianId) || 'Unknown'}</TableCell>
                       <TableCell>{format(new Date(task.date), "LLL dd, y")}</TableCell>
                       <TableCell>
-                          <Badge variant="secondary" className={cn("text-secondary-foreground", getStatusBadgeColor(task.status))}>
+                          <Badge variant="secondary" className={cn("text-foreground", getStatusBadgeColor(task.status))}>
                               {task.status}
                           </Badge>
                       </TableCell>
@@ -207,6 +218,7 @@ export default function TaskManagementPage() {
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={selectedTask}
+        technicianName={selectedTask ? usersMap.get(selectedTask.assignedTechnicianId) || 'Unknown' : 'Unknown'}
         onUpdateStatus={handleUpdateStatus}
       />
     </>

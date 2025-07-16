@@ -21,7 +21,10 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 export default function ReportsPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [allTechnicians, setAllTechnicians] = useState<User[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
+
+    const usersMap = new Map(users.map(user => [user.id, user.name]));
     
     useEffect(() => {
         const q = query(collection(db, "tasks"));
@@ -37,9 +40,16 @@ export default function ReportsPage() {
             setAllTechnicians(techData);
         });
 
+        const usersQuery = query(collection(db, "users"));
+        const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
+            const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setUsers(usersData);
+        });
+
         return () => {
             unsubscribe();
             techUnsubscribe();
+            usersUnsubscribe();
         };
     }, []);
 
@@ -139,12 +149,12 @@ export default function ReportsPage() {
                     <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.jobNumber}</TableCell>
                     <TableCell>{task.name}</TableCell>
-                    <TableCell>{task.assignedTechnician}</TableCell>
+                    <TableCell>{usersMap.get(task.assignedTechnicianId) || 'Unknown'}</TableCell>
                     <TableCell>{format(new Date(task.date), "LLL dd, y")}</TableCell>
                     <TableCell>
                         <Badge variant={task.status === 'Cancelled' ? 'destructive' : 'secondary'}
                          className={cn(
-                            "text-secondary-foreground",
+                            "text-foreground",
                             task.status === 'Completed' && 'bg-green-600/80',
                             task.status === 'Incomplete' && 'bg-orange-500/80',
                         )}

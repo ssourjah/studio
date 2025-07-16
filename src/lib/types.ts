@@ -15,7 +15,7 @@ export type Task = {
   contactPhone: string;
   date: string;
   status: TaskStatus;
-  assignedTechnician: string;
+  assignedTechnicianId: string;
   updatedBy: string;
 };
 

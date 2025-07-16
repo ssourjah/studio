@@ -6,8 +6,8 @@ import { SummaryCards } from '@/components/dashboard/summary-cards';
 import { StatusCharts } from '@/components/dashboard/status-charts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Task, TaskStatus } from '@/lib/types';
-import { User, Calendar, Tag, MapPin, Plus } from 'lucide-react';
+import type { Task, TaskStatus, User } from '@/lib/types';
+import { User as UserIcon, Calendar, Tag, MapPin, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -20,11 +20,14 @@ import { cn } from '@/lib/utils';
 export default function DashboardPage() {
   const { userRole } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [summaryData, setSummaryData] = useState({ total: 0, completed: 0, incomplete: 0, cancelled: 0 });
 
   const canCreateTasks = userRole?.permissions?.tasks?.create ?? false;
+
+  const usersMap = new Map(users.map(user => [user.id, user.name]));
 
   useEffect(() => {
     const q = query(collection(db, "tasks"));
@@ -42,7 +45,16 @@ export default function DashboardPage() {
       setSummaryData({ total: tasksData.length, completed, incomplete, cancelled });
     });
 
-    return () => unsubscribe();
+    const usersQuery = query(collection(db, "users"));
+    const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
+        const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(usersData);
+    });
+
+    return () => {
+        unsubscribe();
+        usersUnsubscribe();
+    };
   }, []);
 
   const handleUpdateStatus = async (taskId: string, newStatus: TaskStatus) => {
@@ -92,8 +104,8 @@ export default function DashboardPage() {
                             <CardContent className="space-y-3 flex-grow">
                                 <Separator />
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <User className="h-4 w-4" />
-                                    <span>{task.assignedTechnician}</span>
+                                    <UserIcon className="h-4 w-4" />
+                                    <span>{usersMap.get(task.assignedTechnicianId) || 'Unknown'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Calendar className="h-4 w-4" />
@@ -112,7 +124,7 @@ export default function DashboardPage() {
                             </CardContent>
                              <div className="p-6 pt-0">
                                 <Badge variant="secondary" className={cn(
-                                    "text-secondary-foreground",
+                                    "text-foreground",
                                     task.status === 'Completed' && 'bg-green-600/80',
                                     task.status === 'Incomplete' && 'bg-orange-500/80',
                                 )}>
@@ -134,6 +146,7 @@ export default function DashboardPage() {
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={selectedTask}
+        technicianName={selectedTask ? usersMap.get(selectedTask.assignedTechnicianId) || 'Unknown' : 'Unknown'}
         onUpdateStatus={handleUpdateStatus}
       />
     </div>

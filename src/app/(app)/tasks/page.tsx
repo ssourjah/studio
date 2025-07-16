@@ -37,18 +37,21 @@ const taskSchema = z.object({
     contactPerson: z.string().min(1, "Contact person is required"),
     contactPhone: z.string().min(1, "Contact phone is required"),
     date: z.date({ required_error: "A date is required." }),
-    assignedTechnician: z.string().min(1, "Please assign a technician"),
+    assignedTechnicianId: z.string().min(1, "Please assign a technician"),
 });
 
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const { toast } = useToast();
-    const { userRole } = useAuth();
+    const { userRole, currentUser } = useAuth();
     const [location, setLocation] = useState<Location | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [technicians, setTechnicians] = useState<User[]>([]);
 
     const canCreateTasks = userRole?.permissions?.tasks?.create ?? false;
+    const usersMap = new Map(users.map(user => [user.id, user.name]));
+
 
     const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm({
         resolver: zodResolver(taskSchema),
@@ -60,7 +63,7 @@ export default function TasksPage() {
             contactPerson: '',
             contactPhone: '',
             date: undefined,
-            assignedTechnician: '',
+            assignedTechnicianId: '',
         }
     });
 
@@ -81,9 +84,16 @@ export default function TasksPage() {
             setTechnicians(techData);
         });
 
+        const usersQuery = query(collection(db, "users"));
+        const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
+            const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setUsers(usersData);
+        });
+
         return () => {
             unsubscribe();
             techUnsubscribe();
+            usersUnsubscribe();
         };
     }, []);
 
@@ -106,13 +116,22 @@ export default function TasksPage() {
             return;
         }
 
+        if (!currentUser) {
+            toast({
+                title: "Error",
+                description: "You must be logged in to create a task.",
+                variant: 'destructive',
+            });
+            return;
+        }
+
         try {
             await addDoc(collection(db, 'tasks'), {
                 ...data,
                 date: format(data.date, 'yyyy-MM-dd'),
                 status: 'Incomplete',
                 jobNumber: `JB-${new Date().getTime()}`,
-                updatedBy: 'Admin', // This should be dynamic in a real app
+                updatedBy: currentUser.id,
             });
             toast({
                 title: "Task Created",
@@ -232,7 +251,7 @@ export default function TasksPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="technician">Assign Technician</Label>
                                     <Controller
-                                        name="assignedTechnician"
+                                        name="assignedTechnicianId"
                                         control={control}
                                         render={({ field }) => (
                                             <Select onValueChange={field.onChange} value={field.value}>
@@ -240,12 +259,12 @@ export default function TasksPage() {
                                                     <SelectValue placeholder="Select a technician" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {technicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
+                                                    {technicians.map(tech => <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         )}
                                     />
-                                    {errors.assignedTechnician && <p className="text-sm text-red-500">{errors.assignedTechnician.message as string}</p>}
+                                    {errors.assignedTechnicianId && <p className="text-sm text-red-500">{errors.assignedTechnicianId.message as string}</p>}
                                 </div>
                                 <Button type="submit" className="w-full">Create Task</Button>
                             </form>
@@ -280,11 +299,11 @@ export default function TasksPage() {
                                {tasks.map(task => (
                                    <TableRow key={task.id}>
                                        <TableCell className="font-medium">{task.name}</TableCell>
-                                       <TableCell>{task.assignedTechnician}</TableCell>
+                                       <TableCell>{usersMap.get(task.assignedTechnicianId) || 'Unknown'}</TableCell>
                                        <TableCell>
                                            <Badge variant={task.status === 'Cancelled' ? 'destructive' : 'secondary'}
                                            className={cn(
-                                               "text-secondary-foreground",
+                                               "text-foreground",
                                                task.status === 'Completed' && 'bg-green-600/80',
                                                task.status === 'Incomplete' && 'bg-orange-500/80',
                                            )}

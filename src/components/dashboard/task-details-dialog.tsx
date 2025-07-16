@@ -22,9 +22,10 @@ interface TaskDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskStatus) => void;
+  technicianName: string;
 }
 
-export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }: TaskDetailsDialogProps) {
+export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus, technicianName }: TaskDetailsDialogProps) {
   if (!task) return null;
 
   const handleNavigate = (lat: number, lng: number) => {
@@ -54,7 +55,7 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
               <DialogTitle>{task.name}</DialogTitle>
               <DialogDescription>{task.jobNumber}</DialogDescription>
             </div>
-             <Badge variant="secondary" className={cn("text-secondary-foreground mt-3", getStatusBadgeColor(task.status))}>
+             <Badge variant="secondary" className={cn("text-foreground mt-3", getStatusBadgeColor(task.status))}>
                 {task.status}
             </Badge>
           </div>
@@ -71,7 +72,7 @@ export function TaskDetailsDialog({ task, isOpen, onOpenChange, onUpdateStatus }
             </div>
              <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <p>Assigned to <span className="font-medium">{task.assignedTechnician}</span></p>
+              <p>Assigned to <span className="font-medium">{technicianName}</span></p>
             </div>
              <div className="flex items-center gap-3">
               <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
