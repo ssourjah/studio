@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Task, User } from '@/lib/types';
 import { taskTypes } from '@/lib/mock-data';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 
 const taskSchema = z.object({
     name: z.string().min(1, "Task name is required"),
@@ -44,6 +45,7 @@ export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const { toast } = useToast();
     const { userRole, currentUser } = useAuth();
+    const { technicianRoleIds } = useSettings();
     const [location, setLocation] = useState<Location | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [users, setUsers] = useState<User[]>([]);
@@ -77,13 +79,6 @@ export default function TasksPage() {
             setTasks(tasksData.slice(0, 5));
         });
 
-        const techQuery = query(collection(db, "users"), where("accessLevel", "==", "Technician"));
-        const techUnsubscribe = onSnapshot(techQuery, (snapshot) => {
-            const techData: User[] = [];
-            snapshot.forEach(doc => techData.push({ id: doc.id, ...doc.data() } as User));
-            setTechnicians(techData);
-        });
-
         const usersQuery = query(collection(db, "users"));
         const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
             const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
@@ -92,10 +87,18 @@ export default function TasksPage() {
 
         return () => {
             unsubscribe();
-            techUnsubscribe();
             usersUnsubscribe();
         };
     }, []);
+
+    useEffect(() => {
+        if (technicianRoleIds.length > 0 && users.length > 0) {
+            const techUsers = users.filter(user => user.roleId && technicianRoleIds.includes(user.roleId));
+            setTechnicians(techUsers);
+        } else {
+            setTechnicians([]);
+        }
+    }, [technicianRoleIds, users]);
 
     useEffect(() => {
         if (location) {

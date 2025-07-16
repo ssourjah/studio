@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { technicians, statuses } from '@/lib/mock-data';
+import { statuses } from '@/lib/mock-data';
 import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -16,6 +16,7 @@ import type { DateRange } from "react-day-picker";
 import type { Task, User } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { useSettings } from '@/context/SettingsContext';
 
 
 export default function ReportsPage() {
@@ -23,6 +24,7 @@ export default function ReportsPage() {
     const [allTechnicians, setAllTechnicians] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
+    const { technicianRoleIds } = useSettings();
 
     const usersMap = new Map(users.map(user => [user.id, user.name]));
     
@@ -32,14 +34,7 @@ export default function ReportsPage() {
             const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
             setTasks(tasksData);
         });
-
-        const techQuery = query(collection(db, "users"), where("accessLevel", "==", "Technician"));
-        const techUnsubscribe = onSnapshot(techQuery, (snapshot) => {
-            const techData: User[] = [];
-            snapshot.forEach(doc => techData.push({ id: doc.id, ...doc.data() } as User));
-            setAllTechnicians(techData);
-        });
-
+        
         const usersQuery = query(collection(db, "users"));
         const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
             const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
@@ -48,10 +43,19 @@ export default function ReportsPage() {
 
         return () => {
             unsubscribe();
-            techUnsubscribe();
             usersUnsubscribe();
         };
     }, []);
+    
+    useEffect(() => {
+      if (technicianRoleIds.length > 0 && users.length > 0) {
+        const techUsers = users.filter(user => user.roleId && technicianRoleIds.includes(user.roleId));
+        setAllTechnicians(techUsers);
+      } else {
+        setAllTechnicians([]);
+      }
+    }, [technicianRoleIds, users]);
+
 
     const sortedTasks = useMemo(() => {
         return [...tasks].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

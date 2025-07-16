@@ -23,6 +23,8 @@ interface SettingsContextType {
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
     smtpSettings: SmtpSettings;
     setSmtpSettings: (settings: SmtpSettings) => Promise<void>;
+    technicianRoleIds: string[];
+    setTechnicianRoleIds: (roleIds: string[]) => Promise<void>;
     loading: boolean;
 }
 
@@ -30,6 +32,8 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const companySettingsDocRef = doc(db, 'settings', 'company');
 const adminSettingsDocRef = doc(db, 'settings', 'admin');
+const permissionsDocRef = doc(db, 'settings', 'permissions');
+
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [companyName, setCompanyNameState] = useState('TaskMaster Pro');
@@ -42,10 +46,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         smtpUser: '',
         smtpPassword: '',
     });
+    const [technicianRoleIds, setTechnicianRoleIdsState] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setLoading(true);
+        const unsubs: (() => void)[] = [];
 
         const unsubCompany = onSnapshot(companySettingsDocRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -54,11 +60,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 setLogoUrlLightState(data.logoUrlLight || null);
                 setLogoUrlDarkState(data.logoUrlDark || null);
             }
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching company settings:", error);
-            setLoading(false);
-        });
+        }, (error) => console.error("Error fetching company settings:", error));
+        unsubs.push(unsubCompany);
 
         const unsubAdmin = onSnapshot(adminSettingsDocRef, (docSnap) => {
              if (docSnap.exists()) {
@@ -71,11 +74,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                     smtpPassword: data.smtpPassword || '',
                 });
             }
+        }, (error) => console.error("Error fetching admin settings:", error));
+        unsubs.push(unsubAdmin);
+        
+        const unsubPermissions = onSnapshot(permissionsDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setTechnicianRoleIdsState(data.technicianRoleIds || []);
+            }
+            setLoading(false); // Consider loading finished after all initial fetches
+        }, (error) => {
+            console.error("Error fetching permissions settings:", error);
+            setLoading(false);
         });
+        unsubs.push(unsubPermissions);
 
         return () => {
-            unsubCompany();
-            unsubAdmin();
+            unsubs.forEach(unsub => unsub());
         };
     }, []);
 
@@ -99,6 +114,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         await setDoc(adminSettingsDocRef, settings, { merge: true });
     };
 
+    const setTechnicianRoleIds = async (roleIds: string[]) => {
+        await setDoc(permissionsDocRef, { technicianRoleIds: roleIds }, { merge: true });
+    }
+
     const value = {
         companyName,
         setCompanyName,
@@ -110,6 +129,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDisableAdminLogin,
         smtpSettings,
         setSmtpSettings,
+        technicianRoleIds,
+        setTechnicianRoleIds,
         loading
     };
 

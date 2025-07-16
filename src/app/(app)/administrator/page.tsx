@@ -47,6 +47,101 @@ const initialPermissions = services.reduce((acc, service) => {
     return acc;
 }, {} as Record<PermissionLevel, Permission>);
 
+function TechnicianRolesSettings() {
+    const { technicianRoleIds, setTechnicianRoleIds } = useSettings();
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+    const { userRole } = useAuth();
+    const canEdit = userRole?.permissions.administrator?.edit ?? false;
+
+    useEffect(() => {
+        const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
+            const rolesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
+            setRoles(rolesData);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        setSelectedRoleIds(technicianRoleIds);
+    }, [technicianRoleIds]);
+
+    const handleCheckboxChange = (roleId: string) => {
+        setSelectedRoleIds(prev =>
+            prev.includes(roleId)
+                ? prev.filter(id => id !== roleId)
+                : [...prev, roleId]
+        );
+    };
+
+    const handleSave = async () => {
+        setIsLoading(true);
+        try {
+            await setTechnicianRoleIds(selectedRoleIds);
+            toast({
+                title: 'Settings Saved',
+                description: 'Technician roles have been updated.',
+            });
+        } catch (error) {
+            toast({
+                title: 'Error Saving Settings',
+                description: 'Could not update technician roles.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Technician Role Assignment</CardTitle>
+                <CardDescription>
+                    Select which roles should be considered 'Technicians'. Users with these roles will appear in task assignment dropdowns.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="border rounded-md">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Technician</TableHead>
+                                <TableHead>Role Name</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {roles.length > 0 ? roles.map(role => (
+                                <TableRow key={role.id}>
+                                    <TableCell className="text-center">
+                                        <Checkbox
+                                            checked={selectedRoleIds.includes(role.id)}
+                                            onCheckedChange={() => handleCheckboxChange(role.id)}
+                                            disabled={!canEdit}
+                                        />
+                                    </TableCell>
+                                    <TableCell>{role.name}</TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                        No roles created yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                 <Button onClick={handleSave} disabled={isLoading || !canEdit}>
+                    {isLoading ? 'Saving...' : 'Save Technician Roles'}
+                 </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function RoleManagementTab() {
   const { userRole } = useAuth();
@@ -238,6 +333,8 @@ function RoleManagementTab() {
         </CardContent>
       </Card>
       
+      <TechnicianRolesSettings />
+
       <Card>
         <CardHeader>
             <CardTitle>Existing Roles</CardTitle>
@@ -436,7 +533,7 @@ function AppSettingsTab() {
     } catch (error) {
         toast({
             title: "Error",
-            description: "Failed to save admin settings. Please try again.",
+            description: "Failed to save admin settings.",
             variant: "destructive",
         });
     } finally {

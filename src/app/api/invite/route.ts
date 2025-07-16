@@ -28,6 +28,7 @@ function getAdminApp(): admin.app.App {
     }
     return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
+        databaseURL: "https://taskmaster-pro-9ah46-default-rtdb.europe-west1.firebasedatabase.app"
     });
 }
 // --- End Firebase Admin Initialization ---
