@@ -25,6 +25,10 @@ function getServiceAccount(): admin.ServiceAccount | { error: string } {
 }
 
 export async function getAdminApp(): Promise<admin.app.App | { error: string }> {
+    if (!admin || typeof admin.initializeApp !== 'function') {
+        return { error: 'Firebase Admin SDK not properly loaded' };
+    }
+
     const serviceAccount = getServiceAccount();
     if ('error' in serviceAccount) {
         return serviceAccount;
