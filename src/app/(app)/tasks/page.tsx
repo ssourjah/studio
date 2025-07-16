@@ -42,7 +42,6 @@ const taskSchema = z.object({
 
 export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    const isApiKeyValid = apiKey && apiKey !== 'YOUR_API_KEY';
     const { toast } = useToast();
     const { userRole } = useAuth();
     const [location, setLocation] = useState<Location | null>(null);
@@ -172,8 +171,8 @@ export default function TasksPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Location</Label>
-                                    {isApiKeyValid ? (
-                                        <APIProvider apiKey={apiKey!}>
+                                    {apiKey ? (
+                                        <APIProvider apiKey={apiKey}>
                                             <LocationPicker onLocationChange={setLocation} />
                                         </APIProvider>
                                     ) : (
