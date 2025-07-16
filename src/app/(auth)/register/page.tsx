@@ -60,12 +60,12 @@ export default function RegisterPage() {
         employeeId: data.employeeId || '',
         department: data.department || '',
         roleId: roleId || null, // Use roleId from invite link or null
-        status: 'Active', // Users registering via link are auto-activated
+        status: roleId ? 'Active' : 'Pending',
       });
       
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully.",
+        description: roleId ? "Your account has been created successfully." : "Your registration request has been submitted for approval.",
       });
       router.push("/login");
 
