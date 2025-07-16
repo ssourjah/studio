@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendTaskReport } from '@/services/email';
 import { generateTaskReportCsv } from '@/services/reports';
 
-function SendReportDialog({ currentUserEmail, filteredTasks }: { currentUserEmail: string, filteredTasks: Task[] }) {
+function SendReportDialog({ currentUserEmail, filteredTasks, usersMap }: { currentUserEmail: string, filteredTasks: Task[], usersMap: Map<string, string> }) {
     const [recipient, setRecipient] = useState(currentUserEmail);
     const [format, setFormat] = useState<ReportFormat>('csv');
     const [isSending, setIsSending] = useState(false);
@@ -38,7 +38,11 @@ function SendReportDialog({ currentUserEmail, filteredTasks }: { currentUserEmai
     const handleSend = async () => {
         setIsSending(true);
         try {
-            await sendTaskReport({ recipient, format, tasks: filteredTasks });
+            const tasksWithTechnicianName = filteredTasks.map(task => ({
+                ...task,
+                technicianName: usersMap.get(task.assignedTechnicianId) || 'Unknown'
+            }));
+            await sendTaskReport({ recipient, format, tasks: tasksWithTechnicianName });
             toast({
                 title: 'Report Sent',
                 description: `The task report has been sent to ${recipient}.`
@@ -174,7 +178,11 @@ export default function ReportsPage() {
 
     const handleCsvExport = async () => {
         try {
-            const csvData = await generateTaskReportCsv(filteredTasks);
+            const tasksWithTechnicianName = filteredTasks.map(task => ({
+                ...task,
+                technicianName: usersMap.get(task.assignedTechnicianId) || 'Unknown'
+            }));
+            const csvData = await generateTaskReportCsv(tasksWithTechnicianName);
             const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -230,7 +238,7 @@ export default function ReportsPage() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <SendReportDialog currentUserEmail={currentUser?.email || ''} filteredTasks={filteredTasks} />
+                <SendReportDialog currentUserEmail={currentUser?.email || ''} filteredTasks={filteredTasks} usersMap={usersMap} />
             </div>
         </div>
       </CardHeader>

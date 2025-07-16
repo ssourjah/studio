@@ -18,6 +18,7 @@ export type Task = {
   status: TaskStatus;
   assignedTechnicianId: string;
   updatedBy: string;
+  technicianName?: string;
 };
 
 export type UserStatus = 'Active' | 'Pending' | 'Suspended';

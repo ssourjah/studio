@@ -1,26 +1,6 @@
 
 'use server';
-import * as admin from 'firebase-admin';
-import type { Task, User } from '@/lib/types';
-
-// This is a simplified admin app initialization. 
-// In a real app, you'd likely share this from a central file.
-function getAdminApp(): admin.app.App {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (!serviceAccountJson) {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set.');
-    }
-    const serviceAccount = JSON.parse(serviceAccountJson);
-
-    if (admin.apps.length > 0) {
-        const defaultApp = admin.apps.find((app) => app?.name === '[DEFAULT]');
-        if (defaultApp) return defaultApp;
-    }
-    
-    return admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    });
-}
+import type { Task } from '@/lib/types';
 
 function escapeCsvCell(cellData: string | undefined | null): string {
     if (cellData === undefined || cellData === null) {
@@ -35,16 +15,7 @@ function escapeCsvCell(cellData: string | undefined | null): string {
 }
 
 export async function generateTaskReportCsv(tasks: Task[]): Promise<string> {
-    const db = getAdminApp().firestore();
-
     try {
-        // Fetch all users once to create a lookup map
-        const usersSnapshot = await db.collection('users').get();
-        const usersMap = new Map(usersSnapshot.docs.map(doc => {
-            const userData = doc.data() as User;
-            return [doc.id, userData.name];
-        }));
-
         // Define CSV headers
         const headers = [
             'Job Number', 'Task Name', 'Type', 'Description', 'Location',
@@ -55,7 +26,6 @@ export async function generateTaskReportCsv(tasks: Task[]): Promise<string> {
 
         // Map the provided tasks to CSV rows
         tasks.forEach(task => {
-            const technicianName = usersMap.get(task.assignedTechnicianId) || 'Unknown';
             const row = [
                 task.jobNumber,
                 task.name,
@@ -66,7 +36,7 @@ export async function generateTaskReportCsv(tasks: Task[]): Promise<string> {
                 task.contactPhone,
                 task.date,
                 task.status,
-                technicianName
+                task.technicianName || 'Unknown'
             ].map(escapeCsvCell).join(',');
             
             csvContent += row + '\r\n';
