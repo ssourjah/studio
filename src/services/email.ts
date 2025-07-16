@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { getEmailConfig } from './secure-settings';
-import type { ReportFormat } from '@/lib/types';
+import type { ReportFormat, Task } from '@/lib/types';
 import { generateTaskReportCsv } from './reports';
 import type { Attachment } from 'nodemailer/lib/mailer';
 
@@ -72,11 +72,12 @@ export async function sendInvite(data: InviteInput): Promise<void> {
 const reportSchema = z.object({
   recipient: z.string().email(),
   format: z.enum(['pdf', 'excel', 'csv']),
+  tasks: z.array(z.any()), // Pass filtered tasks from client
 });
 export type ReportInput = z.infer<typeof reportSchema>;
 
 export async function sendTaskReport(data: ReportInput) {
-    const { recipient, format } = reportSchema.parse(data);
+    const { recipient, format, tasks } = reportSchema.parse(data);
     const { companyName } = await getEmailConfig();
 
     let reportBuffer: Buffer;
@@ -85,7 +86,7 @@ export async function sendTaskReport(data: ReportInput) {
 
     switch (format) {
         case 'csv':
-            const csvData = await generateTaskReportCsv();
+            const csvData = await generateTaskReportCsv(tasks as Task[]);
             reportBuffer = Buffer.from(csvData, 'utf-8');
             filename = `task-report-${new Date().toISOString().split('T')[0]}.csv`;
             mimeType = 'text/csv';

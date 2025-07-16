@@ -9,9 +9,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { statuses } from '@/lib/mock-data';
-import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin, ChevronDown, Mail } from 'lucide-react';
+import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin, ChevronDown, Mail, FilterX } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
 import type { DateRange } from "react-day-picker";
 import type { Task, User, Role, ReportFormat } from '@/lib/types';
 import { db } from '@/lib/firebase';
@@ -25,9 +25,9 @@ import { useToast } from '@/hooks/use-toast';
 import { sendTaskReport } from '@/services/email';
 import { generateTaskReportCsv } from '@/services/reports';
 
-function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
+function SendReportDialog({ currentUserEmail, filteredTasks }: { currentUserEmail: string, filteredTasks: Task[] }) {
     const [recipient, setRecipient] = useState(currentUserEmail);
-    const [format, setFormat] = useState<ReportFormat>('pdf');
+    const [format, setFormat] = useState<ReportFormat>('csv');
     const [isSending, setIsSending] = useState(false);
     const { toast } = useToast();
 
@@ -38,7 +38,7 @@ function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
     const handleSend = async () => {
         setIsSending(true);
         try {
-            await sendTaskReport({ recipient, format });
+            await sendTaskReport({ recipient, format, tasks: filteredTasks });
             toast({
                 title: 'Report Sent',
                 description: `The task report has been sent to ${recipient}.`
@@ -63,7 +63,7 @@ function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
                 <DialogHeader>
                     <DialogTitle>Send Task Report</DialogTitle>
                     <DialogDescription>
-                        The report will be generated and sent as an email attachment.
+                        The report will be generated based on the current filters and sent as an email attachment.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -83,8 +83,8 @@ function SendReportDialog({ currentUserEmail }: { currentUserEmail: string }) {
                                 <SelectValue placeholder="Select a format" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="pdf">PDF</SelectItem>
-                                <SelectItem value="excel">Excel</SelectItem>
+                                <SelectItem value="pdf">PDF (Coming Soon)</SelectItem>
+                                <SelectItem value="excel">Excel (Coming Soon)</SelectItem>
                                 <SelectItem value="csv">CSV</SelectItem>
                             </SelectContent>
                         </Select>
@@ -109,9 +109,13 @@ export default function ReportsPage() {
     const [allTechnicians, setAllTechnicians] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
-    const [date, setDate] = useState<DateRange | undefined>()
     const { currentUser } = useAuth();
     const { toast } = useToast();
+    
+    // Filter states
+    const [date, setDate] = useState<DateRange | undefined>();
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [technicianFilter, setTechnicianFilter] = useState<string>('all');
 
     const usersMap = new Map(users.map(user => [user.id, user.name]));
     
@@ -151,10 +155,17 @@ export default function ReportsPage() {
         }
     }, [roles, users]);
 
-
-    const sortedTasks = useMemo(() => {
-        return [...tasks].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [tasks]);
+    const filteredTasks = useMemo(() => {
+        return tasks
+            .filter(task => {
+                const taskDate = new Date(task.date);
+                const isDateMatch = !date?.from || (date.to ? isWithinInterval(taskDate, { start: date.from, end: date.to }) : format(date.from, 'yyyy-MM-dd') === format(taskDate, 'yyyy-MM-dd'));
+                const isStatusMatch = statusFilter === 'all' || task.status === statusFilter;
+                const isTechnicianMatch = technicianFilter === 'all' || task.assignedTechnicianId === technicianFilter;
+                return isDateMatch && isStatusMatch && isTechnicianMatch;
+            })
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [tasks, date, statusFilter, technicianFilter]);
 
     const handleNavigate = (lat: number, lng: number) => {
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -163,7 +174,7 @@ export default function ReportsPage() {
 
     const handleCsvExport = async () => {
         try {
-            const csvData = await generateTaskReportCsv();
+            const csvData = await generateTaskReportCsv(filteredTasks);
             const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -181,6 +192,12 @@ export default function ReportsPage() {
             });
         }
     };
+    
+    const clearFilters = () => {
+        setDate(undefined);
+        setStatusFilter('all');
+        setTechnicianFilter('all');
+    }
 
   return (
     <Card>
@@ -199,11 +216,11 @@ export default function ReportsPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem disabled>
                             <FileText className="mr-2 h-4 w-4" />
                             Export to PDF
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem disabled>
                              <FileSpreadsheet className="mr-2 h-4 w-4" />
                             Export to Excel
                         </DropdownMenuItem>
@@ -213,7 +230,7 @@ export default function ReportsPage() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <SendReportDialog currentUserEmail={currentUser?.email || ''} />
+                <SendReportDialog currentUserEmail={currentUser?.email || ''} filteredTasks={filteredTasks} />
             </div>
         </div>
       </CardHeader>
@@ -255,23 +272,25 @@ export default function ReportsPage() {
                     />
                 </PopoverContent>
             </Popover>
-            <Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
                     <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     {statuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
                 </SelectContent>
             </Select>
-             <Select>
+             <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
                     <SelectValue placeholder="Filter by technician" />
                 </SelectTrigger>
                 <SelectContent>
-                    {allTechnicians.map(tech => <SelectItem key={tech.id} value={tech.name}>{tech.name}</SelectItem>)}
+                    <SelectItem value="all">All Technicians</SelectItem>
+                    {allTechnicians.map(tech => <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>)}
                 </SelectContent>
             </Select>
-             <Button>Apply Filters</Button>
+             <Button variant="outline" onClick={clearFilters}><FilterX className="mr-2 h-4 w-4" /> Clear</Button>
         </div>
         <div className="border rounded-md">
             <Table>
@@ -286,7 +305,7 @@ export default function ReportsPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {sortedTasks.map((task) => (
+                {filteredTasks.length > 0 ? filteredTasks.map((task) => (
                     <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.jobNumber}</TableCell>
                     <TableCell>{task.name}</TableCell>
@@ -311,7 +330,13 @@ export default function ReportsPage() {
                        )}
                     </TableCell>
                     </TableRow>
-                ))}
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={6} className="text-center h-24">
+                            No tasks found for the selected filters.
+                        </TableCell>
+                    </TableRow>
+                )}
                 </TableBody>
             </Table>
         </div>

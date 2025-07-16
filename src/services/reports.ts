@@ -22,7 +22,7 @@ function getAdminApp(): admin.app.App {
     });
 }
 
-function escapeCsvCell(cellData: string | undefined): string {
+function escapeCsvCell(cellData: string | undefined | null): string {
     if (cellData === undefined || cellData === null) {
         return '';
     }
@@ -34,21 +34,18 @@ function escapeCsvCell(cellData: string | undefined): string {
     return cell;
 }
 
-export async function generateTaskReportCsv(): Promise<string> {
+export async function generateTaskReportCsv(tasks: Task[]): Promise<string> {
     const db = getAdminApp().firestore();
 
     try {
-        // 1. Fetch all tasks and users
-        const tasksSnapshot = await db.collection('tasks').get();
+        // Fetch all users once to create a lookup map
         const usersSnapshot = await db.collection('users').get();
-
-        const tasks: Task[] = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         const usersMap = new Map(usersSnapshot.docs.map(doc => {
             const userData = doc.data() as User;
             return [doc.id, userData.name];
         }));
 
-        // 2. Define CSV headers
+        // Define CSV headers
         const headers = [
             'Job Number', 'Task Name', 'Type', 'Description', 'Location',
             'Contact Person', 'Contact Phone', 'Date', 'Status', 'Assigned Technician'
@@ -56,7 +53,7 @@ export async function generateTaskReportCsv(): Promise<string> {
         
         let csvContent = headers.join(',') + '\r\n';
 
-        // 3. Map tasks to CSV rows
+        // Map the provided tasks to CSV rows
         tasks.forEach(task => {
             const technicianName = usersMap.get(task.assignedTechnicianId) || 'Unknown';
             const row = [
