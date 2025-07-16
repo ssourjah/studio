@@ -328,6 +328,7 @@ function AppSettingsTab() {
     logoUrlLight, setLogoUrlLight,
     logoUrlDark, setLogoUrlDark,
     disableAdminLogin, setDisableAdminLogin, 
+    smtpSettings, setSmtpSettings,
     loading 
   } = useSettings();
   const { toast } = useToast();
@@ -358,8 +359,9 @@ function AppSettingsTab() {
       setPreviewLogoUrlLight(logoUrlLight);
       setPreviewLogoUrlDark(logoUrlDark);
       setLocalDisableAdminLogin(disableAdminLogin);
+      setLocalSmtpSettings(smtpSettings);
     }
-  }, [companyName, logoUrlLight, logoUrlDark, disableAdminLogin, loading]);
+  }, [companyName, logoUrlLight, logoUrlDark, disableAdminLogin, smtpSettings, loading]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>, theme: 'light' | 'dark') => {
     const file = e.target.files?.[0];
@@ -395,6 +397,25 @@ function AppSettingsTab() {
       console.error("Failed to save settings:", error);
     } finally {
       setIsSavingCompany(false);
+    }
+  };
+  
+  const handleSmtpSave = async () => {
+    setIsSavingSmtp(true);
+    try {
+        await setSmtpSettings(localSmtpSettings);
+        toast({
+            title: "SMTP Settings Saved",
+            description: "Your email server settings have been updated.",
+        });
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: "Failed to save SMTP settings.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSavingSmtp(false);
     }
   };
 
@@ -554,7 +575,7 @@ function AppSettingsTab() {
                     <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
                 </div>
                 <div className="flex gap-2 mt-4">
-                    <Button onClick={() => {}} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
+                    <Button onClick={handleSmtpSave} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
                     <Button onClick={handleSmtpTest} variant="outline" disabled={isTestingSmtp || !canEditSettings}>{isTestingSmtp ? 'Testing...' : 'Test Connection'}</Button>
                 </div>
             </fieldset>

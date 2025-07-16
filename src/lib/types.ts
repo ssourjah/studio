@@ -72,3 +72,10 @@ export type Role = {
   isTechnician?: boolean;
   permissions: Record<PermissionLevel, Permission>;
 }
+
+export type SmtpSettings = {
+    smtpHost: string;
+    smtpPort: string;
+    smtpUser: string;
+    smtpPassword?: string;
+};

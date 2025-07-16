@@ -19,7 +19,6 @@ import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { sendInvite } from "@/services/email";
-import { checkEnvironment } from "@/services/diagnostics";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const userSchema = z.object({
@@ -47,7 +46,6 @@ export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
-  const [isCheckingEnv, setIsCheckingEnv] = useState(false);
 
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
@@ -122,27 +120,6 @@ export default function InviteUserPage() {
         toast({ title: "Error", description: error.message || "Could not send invitation. Please check SMTP settings.", variant: "destructive" });
     }
   };
-
-  const handleCheckEnv = async () => {
-      setIsCheckingEnv(true);
-      try {
-          const status = await checkEnvironment();
-          console.log("Raw getAdminApp() return:", status);
-          toast({
-              title: "Check Complete",
-              description: "The raw output from getAdminApp() has been logged to your browser's console.",
-          });
-      } catch (e: any) {
-          console.error("Error during environment check:", e);
-          toast({
-              title: "Check Failed",
-              description: "An error occurred. Check the browser console.",
-              variant: "destructive",
-          });
-      } finally {
-          setIsCheckingEnv(false);
-      }
-  }
 
   return (
     <div className="space-y-6">
@@ -285,10 +262,6 @@ export default function InviteUserPage() {
                         <Button type="submit" disabled={isInviting || !canCreateUsers}>
                             <Mail className="mr-2 h-4 w-4" />
                             {isInviting ? 'Sending...' : 'Send Invitation'}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={handleCheckEnv} disabled={isCheckingEnv}>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            {isCheckingEnv ? 'Checking...' : 'Check Configuration'}
                         </Button>
                     </div>
                  </form>

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import type { SmtpSettings } from '@/lib/types';
 
 interface SettingsContextType {
     companyName: string;
@@ -13,6 +14,8 @@ interface SettingsContextType {
     setLogoUrlDark: (url: string | null) => Promise<void>;
     disableAdminLogin: boolean;
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
+    smtpSettings: SmtpSettings;
+    setSmtpSettings: (settings: SmtpSettings) => Promise<void>;
     loading: boolean;
 }
 
@@ -27,6 +30,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [logoUrlLight, setLogoUrlLightState] = useState<string | null>(null);
     const [logoUrlDark, setLogoUrlDarkState] = useState<string | null>(null);
     const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
+    const [smtpSettings, setSmtpSettingsState] = useState<SmtpSettings>({
+        smtpHost: '',
+        smtpPort: '',
+        smtpUser: '',
+        smtpPassword: '',
+    });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -47,6 +56,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
              if (docSnap.exists()) {
                 const data = docSnap.data();
                 setDisableAdminLoginState(data.disableAdminLogin || false);
+                setSmtpSettingsState({
+                    smtpHost: data.smtpHost || '',
+                    smtpPort: data.smtpPort || '',
+                    smtpUser: data.smtpUser || '',
+                    smtpPassword: data.smtpPassword || '',
+                });
             }
             setLoading(false);
         }, (error) => {
@@ -76,6 +91,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         await setDoc(adminSettingsDocRef, { disableAdminLogin: disabled }, { merge: true });
     };
 
+    const setSmtpSettings = async (settings: SmtpSettings) => {
+        await setDoc(adminSettingsDocRef, settings, { merge: true });
+    };
+
     const value = {
         companyName,
         setCompanyName,
@@ -85,6 +104,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLogoUrlDark,
         disableAdminLogin,
         setDisableAdminLogin,
+        smtpSettings,
+        setSmtpSettings,
         loading
     };
 
