@@ -45,7 +45,6 @@ const inviteSchema = z.object({
 export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
-  const { companyName } = useSettings();
   const [roles, setRoles] = useState<Role[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
@@ -116,7 +115,6 @@ export default function InviteUserPage() {
             name: data.name,
             email: data.email,
             roleId: data.roleId,
-            companyName: companyName,
         });
         toast({ title: "Invitation Sent", description: `An invitation has been sent to ${data.email}.` });
         inviteReset();
@@ -273,5 +271,3 @@ export default function InviteUserPage() {
     </div>
   );
 }
-
-    

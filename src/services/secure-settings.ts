@@ -1,8 +1,7 @@
 
 'use server';
 
-import { getAdminApp, initAdminApp } from '@/lib/firebase-admin';
-import type { ServiceAccount } from 'firebase-admin/app';
+import { getAdminApp } from '@/lib/firebase-admin';
 
 export interface SmtpConfig {
     host: string;
@@ -14,35 +13,48 @@ export interface SmtpConfig {
     };
 }
 
-export async function getSmtpSettings(): Promise<SmtpConfig> {
+export interface EmailConfig {
+    companyName: string;
+    smtp: SmtpConfig;
+}
+
+export async function getEmailConfig(): Promise<EmailConfig> {
     try {
         const adminApp = getAdminApp();
         const db = adminApp.firestore();
-        const adminSettingsDocRef = db.collection('settings').doc('admin');
-        const docSnap = await adminSettingsDocRef.get();
+        
+        const adminSettingsDoc = await db.collection('settings').doc('admin').get();
+        const companySettingsDoc = await db.collection('settings').doc('company').get();
 
-        if (!docSnap.exists) {
+        if (!adminSettingsDoc.exists) {
             throw new Error('Admin settings document not found in Firestore.');
         }
+        
+        if (!companySettingsDoc.exists) {
+            throw new Error('Company settings document not found in Firestore.');
+        }
 
-        const data = docSnap.data();
-        if (!data) {
-            throw new Error('Admin settings document is empty.');
+        const adminData = adminSettingsDoc.data();
+        const companyData = companySettingsDoc.data();
+
+        if (!adminData || !companyData) {
+            throw new Error('Settings documents are empty.');
         }
         
         return {
-            host: data.smtpHost || '',
-            port: data.smtpPort ? parseInt(data.smtpPort, 10) : 587,
-            secure: data.smtpPort ? parseInt(data.smtpPort, 10) === 465 : false,
-            auth: {
-                user: data.smtpUser || '',
-                pass: data.smtpPassword || '',
-            },
+            companyName: companyData.companyName || 'TaskMaster Pro',
+            smtp: {
+                host: adminData.smtpHost || '',
+                port: adminData.smtpPort ? parseInt(adminData.smtpPort, 10) : 587,
+                secure: adminData.smtpPort ? parseInt(adminData.smtpPort, 10) === 465 : false,
+                auth: {
+                    user: adminData.smtpUser || '',
+                    pass: adminData.smtpPassword || '',
+                },
+            }
         };
     } catch (error: any) {
-        console.error("Failed to securely fetch SMTP settings:", error);
-        throw new Error(`Could not retrieve SMTP settings: ${error.message}`);
+        console.error("Failed to securely fetch email config:", error);
+        throw new Error(`Could not retrieve email config: ${error.message}`);
     }
 }
-
-    
