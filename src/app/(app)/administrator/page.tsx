@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash2, ShieldQuestion, Edit, XCircle } from "lucide-react";
+import { PlusCircle, Trash2, ShieldQuestion, Edit, XCircle, Wrench } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Role, Permission, PermissionLevel } from "@/lib/types";
 import {
@@ -47,101 +47,6 @@ const initialPermissions = services.reduce((acc, service) => {
     return acc;
 }, {} as Record<PermissionLevel, Permission>);
 
-function TechnicianRolesSettings() {
-    const { technicianRoleIds, setTechnicianRoleIds } = useSettings();
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-    const { userRole } = useAuth();
-    const canEdit = userRole?.permissions.administrator?.edit ?? false;
-
-    useEffect(() => {
-        const unsubscribe = onSnapshot(collection(db, "roles"), (snapshot) => {
-            const rolesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
-            setRoles(rolesData);
-        });
-        return () => unsubscribe();
-    }, []);
-
-    useEffect(() => {
-        setSelectedRoleIds(technicianRoleIds);
-    }, [technicianRoleIds]);
-
-    const handleCheckboxChange = (roleId: string) => {
-        setSelectedRoleIds(prev =>
-            prev.includes(roleId)
-                ? prev.filter(id => id !== roleId)
-                : [...prev, roleId]
-        );
-    };
-
-    const handleSave = async () => {
-        setIsLoading(true);
-        try {
-            await setTechnicianRoleIds(selectedRoleIds);
-            toast({
-                title: 'Settings Saved',
-                description: 'Technician roles have been updated.',
-            });
-        } catch (error) {
-            toast({
-                title: 'Error Saving Settings',
-                description: 'Could not update technician roles.',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Technician Role Assignment</CardTitle>
-                <CardDescription>
-                    Select which roles should be considered 'Technicians'. Users with these roles will appear in task assignment dropdowns.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[80px]">Technician</TableHead>
-                                <TableHead>Role Name</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.length > 0 ? roles.map(role => (
-                                <TableRow key={role.id}>
-                                    <TableCell className="text-center">
-                                        <Checkbox
-                                            checked={selectedRoleIds.includes(role.id)}
-                                            onCheckedChange={() => handleCheckboxChange(role.id)}
-                                            disabled={!canEdit}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{role.name}</TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-muted-foreground">
-                                        No roles created yet.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-                 <Button onClick={handleSave} disabled={isLoading || !canEdit}>
-                    {isLoading ? 'Saving...' : 'Save Technician Roles'}
-                 </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
 
 function RoleManagementTab() {
   const { userRole } = useAuth();
@@ -149,6 +54,7 @@ function RoleManagementTab() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleName, setRoleName] = useState('');
   const [permissions, setPermissions] = useState<Record<PermissionLevel, Permission>>(initialPermissions);
+  const [isTechnician, setIsTechnician] = useState(false);
   const { toast } = useToast();
 
   const isEditing = !!selectedRole;
@@ -168,6 +74,7 @@ function RoleManagementTab() {
   const handleSelectRoleForEdit = (role: Role) => {
     setSelectedRole(role);
     setRoleName(role.name);
+    setIsTechnician(role.isTechnician ?? false);
     // Ensure all permission levels are present, even if not in saved data
     const fullPermissions = { ...initialPermissions, ...role.permissions };
     setPermissions(fullPermissions);
@@ -177,6 +84,7 @@ function RoleManagementTab() {
     setSelectedRole(null);
     setRoleName('');
     setPermissions(initialPermissions);
+    setIsTechnician(false);
   };
 
   const handlePermissionChange = (service: PermissionLevel, level: keyof Permission) => {
@@ -213,7 +121,8 @@ function RoleManagementTab() {
         
         await setDoc(roleRef, {
           name: roleName.trim(),
-          permissions: permissions
+          permissions: permissions,
+          isTechnician: isTechnician
         });
 
         toast({ title: "Success", description: `Role ${isEditing ? 'updated' : 'added'} successfully.` });
@@ -267,6 +176,20 @@ function RoleManagementTab() {
                     placeholder="e.g., Field Manager"
                     value={roleName}
                     onChange={(e) => setRoleName(e.target.value)}
+                />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                    <Label htmlFor="is-technician" className="text-base">Mark as Technician Role</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Allow users with this role to be assigned to tasks.
+                    </p>
+                </div>
+                <Switch
+                    id="is-technician"
+                    checked={isTechnician}
+                    onCheckedChange={setIsTechnician}
                 />
             </div>
             
@@ -332,8 +255,6 @@ function RoleManagementTab() {
             </Button>
         </CardContent>
       </Card>
-      
-      <TechnicianRolesSettings />
 
       <Card>
         <CardHeader>
@@ -346,6 +267,7 @@ function RoleManagementTab() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Role Name</TableHead>
+                            <TableHead>Is Technician?</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -353,6 +275,9 @@ function RoleManagementTab() {
                         {roles.map((role) => (
                             <TableRow key={role.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleSelectRoleForEdit(role)}>
                                 <TableCell className="font-medium">{role.name}</TableCell>
+                                <TableCell>
+                                    {role.isTechnician && <Wrench className="h-4 w-4 text-muted-foreground" />}
+                                </TableCell>
                                 <TableCell className="text-right">
                                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleSelectRoleForEdit(role); }} disabled={!canEdit}>
                                     <Edit className="h-4 w-4" />
@@ -383,7 +308,7 @@ function RoleManagementTab() {
                         ))}
                          {roles.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">
                                     No roles found. Create one above to get started.
                                 </TableCell>
                             </TableRow>
@@ -403,7 +328,6 @@ function AppSettingsTab() {
     logoUrlLight, setLogoUrlLight,
     logoUrlDark, setLogoUrlDark,
     disableAdminLogin, setDisableAdminLogin, 
-    smtpSettings, setSmtpSettings,
     loading 
   } = useSettings();
   const { toast } = useToast();
@@ -434,9 +358,8 @@ function AppSettingsTab() {
       setPreviewLogoUrlLight(logoUrlLight);
       setPreviewLogoUrlDark(logoUrlDark);
       setLocalDisableAdminLogin(disableAdminLogin);
-      setLocalSmtpSettings(smtpSettings);
     }
-  }, [companyName, logoUrlLight, logoUrlDark, disableAdminLogin, smtpSettings, loading]);
+  }, [companyName, logoUrlLight, logoUrlDark, disableAdminLogin, loading]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>, theme: 'light' | 'dark') => {
     const file = e.target.files?.[0];
@@ -475,29 +398,10 @@ function AppSettingsTab() {
     }
   };
 
-  const handleSmtpSave = async () => {
-    setIsSavingSmtp(true);
-    try {
-        await setSmtpSettings(localSmtpSettings);
-        toast({
-            title: "SMTP Settings Saved",
-            description: "Your email server settings have been updated.",
-        });
-    } catch (error) {
-        toast({
-            title: "Error",
-            description: "Failed to save SMTP settings. Please try again.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsSavingSmtp(false);
-    }
-  };
-
   const handleSmtpTest = async () => {
     setIsTestingSmtp(true);
     try {
-        const result = await testSmtpConnection(localSmtpSettings);
+        const result = await testSmtpConnection();
         if (result.success) {
             toast({
                 title: "Connection Successful",
@@ -650,7 +554,7 @@ function AppSettingsTab() {
                     <Input id="smtp-password" type="password" value={localSmtpSettings.smtpPassword} onChange={(e) => setLocalSmtpSettings(p => ({...p, smtpPassword: e.target.value}))} />
                 </div>
                 <div className="flex gap-2 mt-4">
-                    <Button onClick={handleSmtpSave} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
+                    <Button onClick={() => {}} disabled={isSavingSmtp || !canEditSettings}>{isSavingSmtp ? 'Saving...' : 'Save SMTP Settings'}</Button>
                     <Button onClick={handleSmtpTest} variant="outline" disabled={isTestingSmtp || !canEditSettings}>{isTestingSmtp ? 'Testing...' : 'Test Connection'}</Button>
                 </div>
             </fieldset>

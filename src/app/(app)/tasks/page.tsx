@@ -21,12 +21,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Task, User } from '@/lib/types';
+import type { Task, User, Role } from '@/lib/types';
 import { taskTypes } from '@/lib/mock-data';
 import { useAuth } from '@/context/AuthContext';
-import { useSettings } from '@/context/SettingsContext';
 
 const taskSchema = z.object({
     name: z.string().min(1, "Task name is required"),
@@ -45,10 +44,10 @@ export default function TasksPage() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const { toast } = useToast();
     const { userRole, currentUser } = useAuth();
-    const { technicianRoleIds } = useSettings();
     const [location, setLocation] = useState<Location | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [technicians, setTechnicians] = useState<User[]>([]);
 
     const canCreateTasks = userRole?.permissions?.tasks?.create ?? false;
@@ -85,20 +84,28 @@ export default function TasksPage() {
             setUsers(usersData);
         });
 
+        const rolesQuery = query(collection(db, "roles"));
+        const rolesUnsubscribe = onSnapshot(rolesQuery, (querySnapshot) => {
+            const rolesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
+            setRoles(rolesData);
+        });
+
         return () => {
             unsubscribe();
             usersUnsubscribe();
+            rolesUnsubscribe();
         };
     }, []);
 
     useEffect(() => {
+        const technicianRoleIds = roles.filter(r => r.isTechnician).map(r => r.id);
         if (technicianRoleIds.length > 0 && users.length > 0) {
             const techUsers = users.filter(user => user.roleId && technicianRoleIds.includes(user.roleId));
             setTechnicians(techUsers);
         } else {
             setTechnicians([]);
         }
-    }, [technicianRoleIds, users]);
+    }, [roles, users]);
 
     useEffect(() => {
         if (location) {

@@ -13,18 +13,16 @@ import { Calendar as CalendarIcon, FileSpreadsheet, FileText, MapPin } from 'luc
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { DateRange } from "react-day-picker";
-import type { Task, User } from '@/lib/types';
+import type { Task, User, Role } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { useSettings } from '@/context/SettingsContext';
-
 
 export default function ReportsPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [allTechnicians, setAllTechnicians] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [date, setDate] = useState<DateRange | undefined>()
-    const { technicianRoleIds } = useSettings();
 
     const usersMap = new Map(users.map(user => [user.id, user.name]));
     
@@ -40,21 +38,29 @@ export default function ReportsPage() {
             const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(usersData);
         });
+        
+        const rolesQuery = query(collection(db, "roles"));
+        const rolesUnsubscribe = onSnapshot(rolesQuery, (querySnapshot) => {
+            const rolesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
+            setRoles(rolesData);
+        });
 
         return () => {
             unsubscribe();
             usersUnsubscribe();
+            rolesUnsubscribe();
         };
     }, []);
     
     useEffect(() => {
-      if (technicianRoleIds.length > 0 && users.length > 0) {
-        const techUsers = users.filter(user => user.roleId && technicianRoleIds.includes(user.roleId));
-        setAllTechnicians(techUsers);
-      } else {
-        setAllTechnicians([]);
-      }
-    }, [technicianRoleIds, users]);
+        const technicianRoleIds = roles.filter(r => r.isTechnician).map(r => r.id);
+        if (technicianRoleIds.length > 0 && users.length > 0) {
+            const techUsers = users.filter(user => user.roleId && technicianRoleIds.includes(user.roleId));
+            setAllTechnicians(techUsers);
+        } else {
+            setAllTechnicians([]);
+        }
+    }, [roles, users]);
 
 
     const sortedTasks = useMemo(() => {

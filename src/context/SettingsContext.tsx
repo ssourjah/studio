@@ -3,14 +3,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { ColorTheme } from '@/lib/types';
-
-interface SmtpSettings {
-    smtpHost: string;
-    smtpPort: string;
-    smtpUser: string;
-    smtpPassword: string;
-}
 
 interface SettingsContextType {
     companyName: string;
@@ -21,10 +13,6 @@ interface SettingsContextType {
     setLogoUrlDark: (url: string | null) => Promise<void>;
     disableAdminLogin: boolean;
     setDisableAdminLogin: (disabled: boolean) => Promise<void>;
-    smtpSettings: SmtpSettings;
-    setSmtpSettings: (settings: SmtpSettings) => Promise<void>;
-    technicianRoleIds: string[];
-    setTechnicianRoleIds: (roleIds: string[]) => Promise<void>;
     loading: boolean;
 }
 
@@ -32,7 +20,6 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const companySettingsDocRef = doc(db, 'settings', 'company');
 const adminSettingsDocRef = doc(db, 'settings', 'admin');
-const permissionsDocRef = doc(db, 'settings', 'permissions');
 
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -40,13 +27,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [logoUrlLight, setLogoUrlLightState] = useState<string | null>(null);
     const [logoUrlDark, setLogoUrlDarkState] = useState<string | null>(null);
     const [disableAdminLogin, setDisableAdminLoginState] = useState(false);
-    const [smtpSettings, setSmtpSettingsState] = useState<SmtpSettings>({
-        smtpHost: '',
-        smtpPort: '',
-        smtpUser: '',
-        smtpPassword: '',
-    });
-    const [technicianRoleIds, setTechnicianRoleIdsState] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -67,28 +47,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
              if (docSnap.exists()) {
                 const data = docSnap.data();
                 setDisableAdminLoginState(data.disableAdminLogin || false);
-                setSmtpSettingsState({
-                    smtpHost: data.smtpHost || '',
-                    smtpPort: data.smtpPort || '',
-                    smtpUser: data.smtpUser || '',
-                    smtpPassword: data.smtpPassword || '',
-                });
             }
-        }, (error) => console.error("Error fetching admin settings:", error));
-        unsubs.push(unsubAdmin);
-        
-        const unsubPermissions = onSnapshot(permissionsDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setTechnicianRoleIdsState(data.technicianRoleIds || []);
-            }
-            setLoading(false); // Consider loading finished after all initial fetches
+            setLoading(false);
         }, (error) => {
-            console.error("Error fetching permissions settings:", error);
+            console.error("Error fetching admin settings:", error);
             setLoading(false);
         });
-        unsubs.push(unsubPermissions);
-
+        unsubs.push(unsubAdmin);
+        
         return () => {
             unsubs.forEach(unsub => unsub());
         };
@@ -109,14 +75,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const setDisableAdminLogin = async (disabled: boolean) => {
         await setDoc(adminSettingsDocRef, { disableAdminLogin: disabled }, { merge: true });
     };
-    
-    const setSmtpSettings = async (settings: SmtpSettings) => {
-        await setDoc(adminSettingsDocRef, settings, { merge: true });
-    };
-
-    const setTechnicianRoleIds = async (roleIds: string[]) => {
-        await setDoc(permissionsDocRef, { technicianRoleIds: roleIds }, { merge: true });
-    }
 
     const value = {
         companyName,
@@ -127,10 +85,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLogoUrlDark,
         disableAdminLogin,
         setDisableAdminLogin,
-        smtpSettings,
-        setSmtpSettings,
-        technicianRoleIds,
-        setTechnicianRoleIds,
         loading
     };
 

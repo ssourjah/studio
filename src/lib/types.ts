@@ -67,7 +67,6 @@ export type PermissionLevel = 'dashboard' | 'tasks' | 'taskManagement' | 'userMa
 export type Role = {
   id: string;
   name: string;
+  isTechnician?: boolean;
   permissions: Record<PermissionLevel, Permission>;
 }
-
-    
