@@ -45,7 +45,7 @@ const inviteSchema = z.object({
 export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
-  const { companyName, smtpSettings } = useSettings();
+  const { companyName } = useSettings();
   const [roles, setRoles] = useState<Role[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
@@ -117,13 +117,12 @@ export default function InviteUserPage() {
             email: data.email,
             roleId: data.roleId,
             companyName: companyName,
-            smtpConfig: smtpSettings,
         });
         toast({ title: "Invitation Sent", description: `An invitation has been sent to ${data.email}.` });
         inviteReset();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error sending invite:", error);
-        toast({ title: "Error", description: "Could not send invitation. Please check SMTP settings.", variant: "destructive" });
+        toast({ title: "Error", description: error.message || "Could not send invitation. Please check SMTP settings.", variant: "destructive" });
     }
   };
 
@@ -275,4 +274,4 @@ export default function InviteUserPage() {
   );
 }
 
-  
+    

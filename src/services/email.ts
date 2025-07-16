@@ -2,16 +2,7 @@
 'use server';
 
 import nodemailer from 'nodemailer';
-
-interface SmtpConfig {
-    host: string;
-    port: number;
-    secure: boolean;
-    auth: {
-        user: string;
-        pass: string;
-    };
-}
+import { getSmtpSettings, type SmtpConfig } from './secure-settings';
 
 interface EmailOptions {
     to: string;
@@ -20,8 +11,10 @@ interface EmailOptions {
     html: string;
 }
 
-export async function sendEmail(options: EmailOptions, smtpConfig: SmtpConfig, companyName: string) {
-    if (!smtpConfig.host || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
+export async function sendEmail(options: EmailOptions, companyName: string) {
+    const smtpConfig = await getSmtpSettings();
+
+    if (!smtpConfig || !smtpConfig.host || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
         throw new Error("SMTP server is not configured. Please complete the settings on the Settings page.");
     }
     
@@ -51,12 +44,6 @@ export interface SendInviteInput {
   email: string;
   roleId: string;
   companyName: string;
-  smtpConfig: {
-      smtpHost: string;
-      smtpPort: string;
-      smtpUser: string;
-      smtpPassword?: string;
-  };
 }
 
 export async function sendInvite(input: SendInviteInput): Promise<void> {
@@ -72,20 +59,12 @@ export async function sendInvite(input: SendInviteInput): Promise<void> {
       <p>Thanks,</p>
       <p>The ${input.companyName} Team</p>
     `;
-    
-    const smtpConfig = {
-        host: input.smtpConfig.smtpHost,
-        port: input.smtpConfig.smtpPort ? parseInt(input.smtpConfig.smtpPort, 10) : 587,
-        secure: input.smtpConfig.smtpPort ? parseInt(input.smtpConfig.smtpPort, 10) === 465 : false,
-        auth: {
-            user: input.smtpConfig.smtpUser,
-            pass: input.smtpConfig.smtpPassword || '',
-        },
-    };
 
     await sendEmail({
       to: input.email,
       subject: subject,
       html: emailBody,
-    }, smtpConfig, input.companyName);
+    }, input.companyName);
 }
+
+    
