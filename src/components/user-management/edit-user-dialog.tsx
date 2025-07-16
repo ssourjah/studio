@@ -27,6 +27,9 @@ export function EditUserDialog({ isOpen, onOpenChange, user, roles, onUpdateUser
   const [roleId, setRoleId] = useState(user.roleId);
   const [status, setStatus] = useState<UserStatus>(user.status);
 
+  // Determine if this is an approval flow (user is pending and has no role)
+  const isApprovalFlow = user.status === 'Pending' && !user.roleId;
+
   useEffect(() => {
     setRoleId(user.roleId);
     setStatus(user.status);
@@ -34,8 +37,19 @@ export function EditUserDialog({ isOpen, onOpenChange, user, roles, onUpdateUser
 
   const handleSave = () => {
     const updatedData: Partial<User> = {};
-    if (roleId !== user.roleId) updatedData.roleId = roleId;
-    if (status !== user.status) updatedData.status = status;
+    
+    if (roleId && roleId !== user.roleId) {
+      updatedData.roleId = roleId;
+    }
+    
+    if (status !== user.status) {
+      updatedData.status = status;
+    }
+    
+    // If it's an approval flow, we must set the status to Active
+    if (isApprovalFlow && roleId) {
+        updatedData.status = 'Active';
+    }
 
     if (Object.keys(updatedData).length > 0) {
       onUpdateUser(user.id, updatedData);
@@ -43,13 +57,18 @@ export function EditUserDialog({ isOpen, onOpenChange, user, roles, onUpdateUser
     onOpenChange(false);
   };
 
+  const canSave = !isApprovalFlow || (isApprovalFlow && !!roleId);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit User: {user.name}</DialogTitle>
           <DialogDescription>
-            Update the user's role and status.
+             {isApprovalFlow
+              ? "This user requires a role to be approved. Their status will be set to 'Active'."
+              : "Update the user's role and status."
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -70,7 +89,11 @@ export function EditUserDialog({ isOpen, onOpenChange, user, roles, onUpdateUser
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value) => setStatus(value as UserStatus)}>
+            <Select 
+              value={status} 
+              onValueChange={(value) => setStatus(value as UserStatus)} 
+              disabled={isApprovalFlow}
+            >
               <SelectTrigger id="status">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -88,7 +111,9 @@ export function EditUserDialog({ isOpen, onOpenChange, user, roles, onUpdateUser
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button onClick={handleSave} disabled={!canSave}>
+            Save Changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

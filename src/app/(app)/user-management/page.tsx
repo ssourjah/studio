@@ -59,17 +59,24 @@ export default function UserManagementPage() {
     return [...users].sort((a, b) => a.name.localeCompare(b.name));
   }, [users]);
   
-  const handleApprove = async (userId: string) => {
+  const handleApprove = async (userToApprove: User) => {
     if (!canEdit) {
       toast({ title: "Permission Denied", description: "You cannot edit users.", variant: "destructive" });
       return;
     }
-    const userDocRef = doc(db, 'users', userId);
-    try {
-        await updateDoc(userDocRef, { status: 'Active' });
-        toast({ title: "Success", description: "User has been approved." });
-    } catch (error) {
-        toast({ title: "Error", description: "Could not approve user.", variant: "destructive" });
+
+    if (userToApprove.roleId) {
+        const userDocRef = doc(db, 'users', userToApprove.id);
+        try {
+            await updateDoc(userDocRef, { status: 'Active' });
+            toast({ title: "Success", description: "User has been approved." });
+        } catch (error) {
+            toast({ title: "Error", description: "Could not approve user.", variant: "destructive" });
+        }
+    } else {
+        // If no role is assigned, open the edit dialog to force role selection.
+        toast({ title: "Role Required", description: `Please assign a role to ${userToApprove.name} to approve them.`});
+        handleEdit(userToApprove);
     }
   };
   
@@ -200,7 +207,7 @@ export default function UserManagementPage() {
                                               </DropdownMenuItem>
                                             )}
                                             {user.status === 'Pending' && canEdit && (
-                                                <DropdownMenuItem onClick={() => handleApprove(user.id)}>
+                                                <DropdownMenuItem onClick={() => handleApprove(user)}>
                                                     <UserCheck className="mr-2" />
                                                     Approve
                                                 </DropdownMenuItem>
