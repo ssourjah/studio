@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import type { Role } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { sendInvite } from '@/services/email';
+import { useSettings } from "@/context/SettingsContext";
 
 const userSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -44,6 +45,7 @@ const inviteSchema = z.object({
 export default function InviteUserPage() {
   const { toast } = useToast();
   const { userRole } = useAuth();
+  const { companyName, smtpSettings } = useSettings();
   const [roles, setRoles] = useState<Role[]>([]);
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema)
@@ -114,6 +116,8 @@ export default function InviteUserPage() {
             name: data.name,
             email: data.email,
             roleId: data.roleId,
+            companyName: companyName,
+            smtpConfig: smtpSettings,
         });
         toast({ title: "Invitation Sent", description: `An invitation has been sent to ${data.email}.` });
         inviteReset();

@@ -9,7 +9,7 @@ interface SmtpSettings {
     smtpHost: string;
     smtpPort: string;
     smtpUser: string;
-    smtpPassword?: string;
+    smtpPassword: string;
 }
 
 interface SettingsContextType {
